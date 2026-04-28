@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Be Smart - Planos de Saúde</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        
+        :root {
+            --be-smart-purple: #9D7AFF;
+            --be-smart-dark: #0F0A1A;
+        }
+
+        body { font-family: 'Inter', sans-serif; }
+        
+        .bg-be-smart { background-color: var(--be-smart-purple); }
+        .text-be-smart { color: var(--be-smart-purple); }
+        .border-be-smart { border-color: var(--be-smart-purple); }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4B3E66; border-radius: 10px; }
+        
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .sidebar-item-active {
+            background: rgba(157, 122, 255, 0.15);
+            border-left: 4px solid var(--be-smart-purple);
+            color: white !important;
+        }
+
+        .submenu-item {
+            transition: all 0.2s;
+        }
+        .submenu-item:hover {
+            color: var(--be-smart-purple);
+            padding-left: 1.25rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 overflow-hidden text-slate-900">
+
+    <div class="flex h-screen overflow-hidden text-left">
+        <!-- Barra Lateral -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-[#0F0A1A] text-slate-100 transition-transform duration-300 -translate-x-full lg:relative lg:translate-x-0 shadow-2xl">
+            <div class="flex flex-col h-full">
+                <!-- Secção do Logótipo -->
+                <div class="p-8 flex items-center gap-4 border-b border-white/5 shrink-0">
+                    <div class="w-12 h-12 bg-be-smart rounded-xl flex items-center justify-center shadow-lg shadow-purple-900/40">
+                         <i data-lucide="zap" class="text-white w-7 h-7 fill-white/20"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-black text-2xl leading-none tracking-tighter uppercase italic">BE.SMART</h1>
+                        <p class="text-[8px] text-purple-400 font-black uppercase tracking-[0.3em] mt-1 italic">Intelligence v4.0</p>
+                    </div>
+                </div>
+
+                <!-- Navegação Reordenada -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                    <button onclick="navigateTo('dashboard')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-slate-400 hover:bg-white/5 hover:text-white" data-tab="dashboard">
+                        <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard Principal</span>
+                    </button>
+
+                    <!-- MODALIDADES -->
+                    <div class="pt-6 pb-2">
+                        <p class="px-4 text-slate-600 font-black text-[10px] uppercase tracking-[0.2em] mb-3">Modalidades de Plano</p>
+                        
+                        <!-- 1 - PME -->
+                        <div class="mb-2">
+                            <button onclick="toggleSubmenu('pme')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-bold text-sm transition-all group">
+                                <i data-lucide="building-2" class="w-[18px] group-hover:text-be-smart"></i><span>Plano Empresarial (PME)</span>
+                                <i data-lucide="chevron-right" id="icon-pme" class="ml-auto w-3.5 h-3.5 transition-transform"></i>
+                            </button>
+                            <div id="sub-pme" class="hidden mt-1 space-y-1 border-l border-white/10 ml-6 pl-2">
+                                <button onclick="navigateTo('pme-contratacao')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="pme-contratacao">Contratação</button>
+                                <button onclick="navigateTo('pme-vigencia')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="pme-vigencia">Vigência</button>
+                                <button onclick="navigateTo('pme-carencia')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="pme-carencia">Carência</button>
+                                <button onclick="navigateTo('pme-documentacao')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="pme-documentacao">Documentação</button>
+                                <button onclick="navigateTo('pme-reajuste')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="pme-reajuste">Reajuste</button>
+                                <button onclick="navigateTo('pme-cancelamento')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="pme-cancelamento">Cancelamento</button>
+                                <button onclick="navigateTo('pme-preco')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="pme-preco">Análise de Preço</button>
+                            </div>
+                        </div>
+
+                        <!-- 2 - ADESÃO -->
+                        <div class="mb-2">
+                            <button onclick="toggleSubmenu('adesao')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-bold text-sm transition-all group">
+                                <i data-lucide="users" class="w-[18px] group-hover:text-be-smart"></i><span>Plano por Adesão</span>
+                                <i data-lucide="chevron-right" id="icon-adesao" class="ml-auto w-3.5 h-3.5 transition-transform"></i>
+                            </button>
+                            <div id="sub-adesao" class="hidden mt-1 space-y-1 border-l border-white/10 ml-6 pl-2">
+                                <button onclick="navigateTo('adesao-contratacao')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="adesao-contratacao">Contratação</button>
+                                <button onclick="navigateTo('adesao-vigencia')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="adesao-vigencia">Vigência</button>
+                                <button onclick="navigateTo('adesao-carencia')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="adesao-carencia">Carência</button>
+                                <button onclick="navigateTo('adesao-documentacao')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="adesao-documentacao">Documentação</button>
+                                <button onclick="navigateTo('adesao-reajuste')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="adesao-reajuste">Reajuste</button>
+                                <button onclick="navigateTo('adesao-cancelamento')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="adesao-cancelamento">Cancelamento</button>
+                                <button onclick="navigateTo('adesao-preco')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="adesao-preco">Preço</button>
+                            </div>
+                        </div>
+
+                        <!-- 3 - INDIVIDUAL -->
+                        <div class="mb-2">
+                            <button onclick="toggleSubmenu('individual')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-bold text-sm transition-all group">
+                                <i data-lucide="user" class="w-[18px] group-hover:text-be-smart"></i><span>Plano Individual (PF)</span>
+                                <i data-lucide="chevron-right" id="icon-individual" class="ml-auto w-3.5 h-3.5 transition-transform"></i>
+                            </button>
+                            <div id="sub-individual" class="hidden mt-1 space-y-1 border-l border-white/10 ml-6 pl-2">
+                                <button onclick="navigateTo('individual-contratacao')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="individual-contratacao">Contratação</button>
+                                <button onclick="navigateTo('individual-vigencia')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="individual-vigencia">Vigência</button>
+                                <button onclick="navigateTo('individual-carencia')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="individual-carencia">Carência</button>
+                                <button onclick="navigateTo('individual-documentacao')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="individual-documentacao">Documentação</button>
+                                <button onclick="navigateTo('individual-reajuste')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="individual-reajuste">Reajuste</button>
+                                <button onclick="navigateTo('individual-cancelamento')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="individual-cancelamento">Cancelamento</button>
+                                <button onclick="navigateTo('individual-preco')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="individual-preco">Preço</button>
+                            </div>
+                        </div>
+
+                        <!-- 4 - ATENDIMENTO -->
+                        <div class="mb-2">
+                            <button onclick="toggleSubmenu('atendimento')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-bold text-sm transition-all group">
+                                <i data-lucide="stethoscope" class="w-[18px] group-hover:text-be-smart"></i><span>Tipos de Atendimento</span>
+                                <i data-lucide="chevron-right" id="icon-atendimento" class="ml-auto w-3.5 h-3.5 transition-transform"></i>
+                            </button>
+                            <div id="sub-atendimento" class="hidden mt-1 space-y-1 border-l border-white/10 ml-6 pl-2">
+                                <button onclick="navigateTo('atendimento-ambulatorial')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="atendimento-ambulatorial">Ambulatorial</button>
+                                <button onclick="navigateTo('atendimento-hospitalar')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="atendimento-hospitalar">Hospitalar</button>
+                                <button onclick="navigateTo('atendimento-sob')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="atendimento-sob">Amb. Hosp. Sem Obstetrícia</button>
+                                <button onclick="navigateTo('atendimento-cob')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="atendimento-cob">Amb. Hosp. Com Obstetrícia</button>
+                                <button onclick="navigateTo('atendimento-completo')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="atendimento-completo">Plano Completo</button>
+                            </div>
+                        </div>
+
+                        <!-- 5 - ACOMODAÇÃO -->
+                        <div class="mb-2">
+                            <button onclick="toggleSubmenu('acomodacao')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-bold text-sm transition-all group">
+                                <i data-lucide="bed" class="w-[18px] group-hover:text-be-smart"></i><span>Acomodação</span>
+                                <i data-lucide="chevron-right" id="icon-acomodacao" class="ml-auto w-3.5 h-3.5 transition-transform"></i>
+                            </button>
+                            <div id="sub-acomodacao" class="hidden mt-1 space-y-1 border-l border-white/10 ml-6 pl-2">
+                                <button onclick="navigateTo('acomodacao-enfermaria')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="acomodacao-enfermaria">Enfermaria (Coletivo)</button>
+                                <button onclick="navigateTo('acomodacao-apartamento')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="acomodacao-apartamento">Apartamento (Privativo)</button>
+                                <button onclick="navigateTo('acomodacao-diferencas')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="acomodacao-diferencas">Quadro Comparativo</button>
+                            </div>
+                        </div>
+
+                        <!-- 6 - COPARTICIPAÇÃO -->
+                        <div class="mb-2">
+                            <button onclick="toggleSubmenu('copart')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-bold text-sm transition-all group">
+                                <i data-lucide="pie-chart" class="w-[18px] group-hover:text-be-smart"></i><span>Coparticipação</span>
+                                <i data-lucide="chevron-right" id="icon-copart" class="ml-auto w-3.5 h-3.5 transition-transform"></i>
+                            </button>
+                            <div id="sub-copart" class="hidden mt-1 space-y-1 border-l border-white/10 ml-6 pl-2">
+                                <button onclick="navigateTo('copart-total')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="copart-total">Coparticipação Total</button>
+                                <button onclick="navigateTo('copart-parcial')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="copart-parcial">Coparticipação Parcial</button>
+                                <button onclick="navigateTo('copart-sem')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="copart-sem">Sem Coparticipação</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FERRAMENTAS COMERCIAIS -->
+                    <div class="pt-4 pb-2 border-t border-white/5 mt-4">
+                        <p class="px-4 text-slate-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">Comercial</p>
+                        
+                        <!-- 7 - QUALIFICAÇÃO -->
+                        <div class="mb-2">
+                            <button onclick="toggleSubmenu('qualificacao')" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-bold text-sm transition-all group">
+                                <i data-lucide="user-search" class="w-[18px] group-hover:text-be-smart"></i><span>Qualificação</span>
+                                <i data-lucide="chevron-right" id="icon-qualificacao" class="ml-auto w-3.5 h-3.5 transition-transform"></i>
+                            </button>
+                            <div id="sub-qualificacao" class="hidden mt-1 space-y-1 border-l border-white/10 ml-6 pl-2">
+                                <button onclick="navigateTo('qualificacao-avancada')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="qualificacao-avancada">Qualificação Avançada</button>
+                                <button onclick="navigateTo('qualificacao-spin')" class="w-full text-left py-1 text-slate-500 hover:text-be-smart text-xs submenu-item" data-tab="qualificacao-spin">Script SPIN Selling</button>
+                            </div>
+                        </div>
+
+                        <!-- 8 - GANCHOS DE VENDA -->
+                        <button onclick="navigateTo('ganchos')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-slate-400 hover:bg-white/5 hover:text-white" data-tab="ganchos">
+                            <i data-lucide="zap" class="w-5 h-5"></i><span>Ganchos de Venda</span>
+                        </button>
+
+                        <!-- 9 - ESTRATÉGIA FOLLOW-UP -->
+                        <button onclick="navigateTo('followup')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-slate-400 hover:bg-white/5 hover:text-white" data-tab="followup">
+                            <i data-lucide="refresh-cw" class="w-5 h-5"></i><span>Estratégia Follow-up</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rodapé -->
+                <div class="p-6 border-t border-white/5 bg-black/20">
+                    <div class="flex items-center gap-3 text-slate-500">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span class="text-[10px] font-black uppercase tracking-widest italic leading-none">Full Arsenal 2026</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Área de Conteúdo Principal -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <header class="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 shrink-0 z-10 shadow-sm">
+                <button id="mobile-toggle" class="p-2 lg:hidden bg-slate-100 rounded-lg text-be-smart"><i data-lucide="menu"></i></button>
+                <div class="flex items-center gap-4 ml-auto">
+                    <button onclick="navigateTo('dashboard')" class="text-xs font-black text-be-smart uppercase tracking-widest flex items-center gap-2 hover:opacity-80 transition-opacity">
+                         <i data-lucide="home" class="w-4 h-4"></i> Início
+                    </button>
+                </div>
+            </header>
+
+            <main id="content-area" class="flex-1 overflow-y-auto p-6 lg:p-10 bg-[#FBFBFF] custom-scrollbar"></main>
+        </div>
+    </div>
+
+    <!-- Notificação de Feedback -->
+    <div id="notif" class="fixed bottom-10 left-1/2 -translate-x-1/2 translate-y-32 transition-transform duration-500 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[100] border border-white/10">
+        <div class="w-8 h-8 bg-be-smart rounded-full flex items-center justify-center">
+            <i data-lucide="check" class="w-5 h-5"></i>
+        </div>
+        <span class="font-bold text-sm">Informação pronta para o WhatsApp!</span>
+    </div>
+
+    <script>
+        const carenciaGeral = "• Urgência/emergência: 24 horas\n• Consultas e exames simples: 30 dias\n• Internações e exames complexos: 180 dias\n• Parto: 300 dias\n• Doenças e Lesões Pré-existentes (CPT): 24 meses.";
+        const reducaoCarencia = "\n\n💡 DICA DE NEGOCIAÇÃO:\nNa maioria das negociações, se o cliente tiver plano anterior, conseguimos fazer uma redução na carência dos planos contratados.";
+        const obsCartaPermanencia = "\n\n⚠️ OBSERVAÇÃO:\nSe houver plano anterior, solicitar a Carta de Permanência.";
+        const cancelamentoFlexivel = "• Pode ser cancelado a qualquer momento.\n• REGRA DE OURO: Se for cancelado até um dia antes do vencimento, não é necessária a quitação do boleto, mesmo que já tenha sido emitido.";
+
+        const technicalData = {
+            atendimento: {
+                title: "Segmentação Assistencial",
+                ambulatorial: "🏥 PLANO AMBULATORIAL:\nCobertura focada em atendimentos que não exigem internação.\n\n✅ O QUE COBRE:\n• Consultas médicas em clínicas e consultórios;\n• Exames laboratoriais e de imagem;\n• Tratamentos e procedimentos ambulatoriais;\n• Atendimentos de emergência limitados às primeiras 12 horas.\n\n❌ O QUE NÃO COBRE:\n• Internações hospitalares;\n• Cirurgias que exijam permanência em hospital;\n• Partos.\n\n💡 IDEAL PARA: Quem busca apenas acompanhamento de rotina e exames, com custo muito reduzido.",
+                hospitalar: "🏨 PLANO HOSPITALAR:\nCobertura focada exclusivamente em eventos de internação.\n\n✅ O QUE COBRE:\n• Internações hospitalares sem limite de dias;\n• Cirurgias e exames realizados durante a internação;\n• UTI e CTI;\n• Medicamentos ministrados durante o período hospitalar.\n\n❌ O QUE NÃO COBRE:\n• Consultas de rotina fora do hospital;\n• Exames preventivos ou de rotina (check-up);\n• Tratamentos ambulatoriais.\n\n💡 IDEAL PARA: Quem já tem um bom acompanhamento público ou particular para consultas, mas quer proteção contra custos altíssimos de hospitais.",
+                sob: "⚖️ AMBULATORIAL + HOSPITALAR (SEM OBSTETRÍCIA):\nÉ a junção completa dos serviços, excluindo apenas o parto.\n\n✅ COBERTURA:\n• Consultas e exames (Ambulatorial);\n• Internações e cirurgias (Hospitalar).\n\n💡 VANTAGEM: Custo ligeiramente menor que o plano com obstetrícia.\n🎯 PÚBLICO: Homens, mulheres que não pretendem ter filhos ou pessoas fora da idade fértil.",
+                cob: "🤰 AMBULATORIAL + HOSPITALAR (COM OBSTETRÍCIA):\nA cobertura mais comum e equilibrada do mercado.\n\n✅ COBERTURA COMPLETA:\n• Consultas, exames, internações e cirurgias.\n• Assistência ao Parto (após cumprimento da carência de 300 dias).\n• Cobertura do recém-nascido nos primeiros 30 dias de vida.\n\n💡 IMPORTANTE: Garante a inclusão do bebê como dependente sem carências se solicitada em até 30 dias após o nascimento.",
+                completo: "🌟 PLANO COMPLETO (REFERÊNCIA):\nO Plano Referência é definido pela Lei 9.656/98 e oferece o padrão ouro de segurança.\n\n💎 DIFERENCIAIS:\n• Segmentação Ambulatorial + Hospitalar com Obstetrícia;\n• Acomodação obrigatoriamente em Enfermaria (padrão lei);\n• Cobertura integral para urgência e emergência após 24h.\n\n💡 ARGUMENTO DE VENDA:\n\"É o plano que segue rigorosamente o padrão máximo exigido pela ANS, garantindo que você não fique na mão em nenhuma situação, desde uma consulta simples até um procedimento complexo de parto ou UTI.\""
+            },
+            acomodacao: {
+                title: "Acomodação na Internação",
+                enfermaria: "👥 ENFERMARIA (QUARTO COLETIVO):\nAcomodação compartilhada com outros pacientes da mesma operadora.\n\n✅ CARACTERÍSTICAS:\n• Compartilhado com 2 ou mais pessoas (geralmente do mesmo sexo);\n• Banheiro também é compartilhado;\n• Horários de visita são mais restritos e limitados;\n• Acompanhante permitido apenas por lei (menores, idosos, gestantes).\n\n💰 VANTAGEM FINANCEIRA:\nO custo mensal do plano é cerca de 15% a 20% menor que o apartamento.\n\n💡 ARGUMENTO: Ideal para quem prioriza economia e não se importa com a falta de privacidade durante uma eventual internação.",
+                apartamento: "🏠 APARTAMENTO (QUARTO PRIVATIVO):\nAcomodação individual que oferece total privacidade e conforto.\n\n✅ CARACTERÍSTICAS:\n• Quarto individual exclusivo para o paciente;\n• Banheiro privativo no próprio quarto;\n• Horário de visitas muito mais flexível e estendido;\n• Direito a acompanhante 24h (muitas vezes com refeição incluída).\n\n💎 DIFERENCIAL DE CONFORTO:\nOferece maior tranquilidade para o paciente e para a família durante o processo de recuperação.\n\n💡 ARGUMENTO: Recomendado para quem valoriza privacidade, conforto absoluto e quer ter um familiar presente o tempo todo sem restrições.",
+                diferencas: "📊 QUADRO COMPARATIVO - RESUMO:\n\n📍 ENFERMARIA:\n• Privacidade: Baixa (Compartilhado)\n• Visitas: Horários rígidos\n• Acompanhante: Só por lei\n• Custo: Econômico (Mais barato)\n\n📍 APARTAMENTO:\n• Privacidade: Total (Individual)\n• Visitas: Horários flexíveis\n• Acompanhante: Permitido 24h\n• Custo: Prêmium (Investimento maior)\n\n🧠 DICA PARA O CLIENTE:\n\"Se você ou sua família costumam ter acompanhantes durante hospitalizações e prezam pelo conforto de um quarto exclusivo, o Apartamento é o ideal. Se o objetivo é a melhor proteção médica pelo menor preço possível, a Enfermaria atende perfeitamente.\""
+            },
+            pme: {
+                title: "Plano Empresarial (PME)",
+                contratacao: "• Necessário CNPJ ativo (MEI mínimo 180 dias);\n• Mínimo de 2 ou 3 vidas conforme operadora;\n• Aceita Sócios, CLT, Estagiários e Dependentes.",
+                vigencia: "• Análise documental: 5 a 30 dias.\n• Vigência ativa somente após a quitação do primeiro boleto gerado pós-análise.",
+                carencia: carenciaGeral + "\n🔥 REDUÇÃO: Isenção total de carências para grupos acima de 30 vidas." + reducaoCarencia,
+                documentacao: "🏢 EMPRESA / TITULAR:\n- CONTRATO SOCIAL\n- CNPJ\n- RG E CPF OU CNH DO TITULAR DO CNPJ\n- E-MAIL\n- TELEFONE\n\n👨‍👩‍👧‍👦 DEPENDENTES:\n- CERTIDÃO DE NASCIMENTO (SE FOR MENOR DE 18 ANOS)\n- RG E CPF OU CNH\n- VÍNCULO COM O TITULAR (CERTIDÃO DE CASAMENTO OU UNIÃO ESTÁVEL)\n\n👷 FUNCIONÁRIO:\n- RG E CPF OU CNH\n- COMPROVANTE DE VÍNCULO COM A EMPRESA (FGTS, E-SOCIAL, CARTEIRA DE TRABALHO)\n- E-MAIL\n- TELEFONE\n\n👨‍👩‍👧‍👦 DEPENDENTES DO FUNCIONÁRIO:\n- CERTIDÃO DE NASCIMENTO (SE FOR MENOR DE 18 ANOS)\n- RG E CPF OU CNH\n- VÍNCULO COM O TITULAR (CERTIDÃO DE CASAMENTO OU UNIÃO ESTÁVEL)" + obsCartaPermanencia,
+                reajuste: "• No aniversário do contrato (a cada 12 meses);\n• Taxa baseada na Sinistralidade (relação uso x prêmio pago).",
+                cancelamento: "• Fidelidade comum: 12 ou 24 meses.\n• Aviso prévio de 60 dias conforme RN 412 ANS.\n\n⚠️ ALERTA ESTRATÉGICO:\nSempre buscar uma melhor qualificação para o cliente não cancelar o plano antes de 6 meses (na maioria das operadoras) para evitar o estorno do comissionamento.",
+                preco: "• Custo reduzido em relação ao individual.\n• Valores calculados por faixa etária ou capital global (acima de 99 vidas)."
+            },
+            adesao: {
+                title: "Plano por Adesão",
+                contratacao: "• Destinado a profissionais vinculados a entidades de classe (Sindicatos, Associações ou Conselhos).\n• Exige comprovação de vínculo (Diploma, Registro ou Carteirinha).",
+                vigencia: "• Datas fixas de vigência (Ex: Todo dia 01, 10 ou 20 do mês).\n• Pagamento da taxa de Angariação na Assinatura do contrato.\n\n⚠️ IMPORTANTE:\nMesmo pagando a taxa de angariação, o cliente só estará coberto na data de vigência pré-definida na assinatura do contrato.",
+                carencia: carenciaGeral + reducaoCarencia,
+                documentacao: "- RG e CPF ou CNH;\n- Selfie segurando um documento com foto;\n- Comprovante de Residência;\n- Comprovante de Vinculo à Entidade Associativa;\n- E-mail;\n- Telefone;\n- Carta de Permanência (Se houver plano anterior).\n\n👨‍👩‍👧‍👦 EM CASO DE DEPENDENTE:\n- RG e CPF ou CNH;\n- Comprovante de Vínculo com o Titular." + obsCartaPermanencia,
+                reajuste: "• No aniversário da apólice coletiva (mês fixo para todos daquela administradora).",
+                cancelamento: cancelamentoFlexivel,
+                preco: "• Custo intermediário entre o PME e o Individual PF."
+            },
+            individual: {
+                title: "Plano Individual (PF)",
+                contratacao: "• Contratação direta como Pessoa Física (CPF);\n• Livre escolha sem necessidade de vínculo empresarial ou associativo.",
+                vigencia: "• Início imediato após confirmação do primeiro pagamento bancário.",
+                carencia: carenciaGeral + reducaoCarencia,
+                documentacao: "- RG e CPF ou CNH;\n- Selfie segurando um documento com foto;\n- Comprovante de Residência;\n- E-mail;\n- Telefone;\n- Carta de Permanência (Se houver plano anterior).\n\n👨‍👩‍👧‍👦 EM CASO DE DEPENDENTE:\n- RG e CPF ou CNH;\n- Comprovante de Vínculo com o Titular;\n- Carta de Permanência (Se houver plano anterior)." + obsCartaPermanencia,
+                reajuste: "• Anual, regulado pelo teto da ANS (Agência Nacional de Saúde).",
+                cancelamento: cancelamentoFlexivel,
+                preco: "• Maior estabilidade jurídica;\n• Valores tendem a ser superiores devido à proteção contratual da ANS."
+            },
+            copart: {
+                title: "Modelos de Coparticipação",
+                total: "🔴 COPARTICIPAÇÃO TOTAL - Definição Clara:\nCoparticipação total é o modelo de plano de saúde em que o cliente paga uma mensalidade mais baixa e participa com um percentual ou valor fixo em praticamente todos os atendimentos que utilizar.\n\n📊 COMO FUNCIONA NA PRÁTICA:\n• 💳 Mensalidade reduzida\n• 🩺 Cobrança ao usar: Consultas, Exames, Terapias e Procedimentos (em muitos casos)\n• 📈 Percentuais comuns: 20% a 50% (varia por operadora)\n• 🛑 Limite por evento e/ou teto mensal (proteção de custo)\n\n💡 EXPLICAÇÃO SIMPLES (PRA CLIENTE):\n\"Na coparticipação total você paga um valor menor todo mês e só participa com uma parte do custo quando usa o plano. Ou seja, não fica pagando caro sem utilizar — você investe conforme a necessidade.\"\n\n🎯 QUANDO FAZ SENTIDO:\n• 👤 Quem usa pouco o plano\n• 💰 Quem quer reduzir custo mensal\n• 📉 Quem prefere pagar sob demanda ao invés de fixo alto\n\n⚠️ PONTO DE ATENÇÃO:\nSe o cliente usa com muita frequência, esse modelo pode gerar mais custo ao longo do tempo — por isso a escolha precisa ser baseada no perfil.\n\n💬 FRASE DE VENDA (DIRETA):\n\"Esse modelo é ideal pra quem quer economizar no valor mensal e usar o plano de forma mais pontual, mantendo proteção quando precisar.\"",
+                parcial: "⚖️ COPARTICIPAÇÃO PARCIAL:\n• Taxas aplicadas apenas em itens específicos (geralmente Terapias e Internamentos).\n• Isenção total em Consultas Simples e Exames Laboratoriais básicos.\n\n🩺 PROCEDIMENTOS GERALMENTE COBRADOS:\n- Psicoterapias (sessões de psicologia).\n- Fisioterapias.\n- Fonoaudiologia.\n- Nutrição (consultas com nutricionista).\n- Terapia Ocupacional.\n\n• OBJETIVO: Equilíbrio entre uma mensalidade justa e liberdade de uso rotineiro.",
+                sem: "🟢 SEM COPARTICIPAÇÃO - Explicação Clara:\nPlano sem coparticipação é aquele em que o cliente paga uma mensalidade fixa mais alta e não paga nada a mais quando utiliza os serviços cobertos.\n\n📊 COMO FUNCIONA NA PRÁTICA:\n• 💳 Mensalidade maior\n• 🩺 Sem cobrança por uso: Consultas, Exames, Internações e Procedimentos cobertos\n• 📉 Custo previsível (você sabe exatamente quanto vai pagar todo mês)\n\n💡 EXPLICAÇÃO SIMPLES (PRA CLIENTE):\n\"No plano sem coparticipação você paga um valor profissional por mês e pode usar consultas, exames e outros serviços sem pagar nada a mais por isso. É mais previsível, porque não tem surpresa no bolso quando precisar usar.\"\n\n🎯 QUANDO FAZ SENTIDO:\n• 👨‍👩‍👧 Quem usa o plano com frequência\n• 🩺 Pessoas com acompanhamento médico recorrente\n• 📅 Quem quer previsibilidade total no orçamento\n\n⚠️ PONTO DE ATENÇÃO:\nSe a pessoa quase não usa o plano, pode acabar pagando mais caro ao longo do tempo — já que a mensalidade é mais alta.\n\n💬 FRASE DE VENDA (DIRETA):\n\"Esse modelo é ideal pra quem quer tranquilidade total — você paga um valor fixo e usa o plano sem se preocupar com cobranças extras.\"\n\n🧠 COMO POSICIONAR BEM:\n👉 Não venda como \"mais caro\"\n👉 Venda como \"mais previsível e seguro\""
+            }
+        };
+
+        const otherData = {
+            dashboard: { render: () => `<div class="fade-in space-y-8 text-left"><div class="bg-be-smart p-12 rounded-[3.5rem] text-white shadow-2xl relative overflow-hidden"><div class="relative z-10 max-w-2xl"><h1 class="text-6xl font-black italic tracking-tighter uppercase leading-[0.9]">Be Smart Arsenal.</h1><p class="text-purple-100 text-xl font-medium mt-6 italic">A estrutura técnica completa de vendas para PME, Adesão e Individual.</p></div><i data-lucide="zap" class="absolute right-[-40px] bottom-[-40px] w-96 h-96 opacity-10 -rotate-12"></i></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"><div onclick="navigateTo('pme-contratacao')" class="p-8 bg-white border border-slate-100 rounded-3xl shadow-sm hover:border-be-smart cursor-pointer transition-all"><i data-lucide="building-2" class="text-be-smart mb-4"></i><h3 class="font-black uppercase italic text-sm">Empresarial PME</h3></div><div onclick="navigateTo('adesao-contratacao')" class="p-8 bg-white border border-slate-100 rounded-3xl shadow-sm hover:border-be-smart cursor-pointer transition-all"><i data-lucide="users" class="text-be-smart mb-4"></i><h3 class="font-black uppercase italic text-sm">Por Adesão</h3></div><div onclick="navigateTo('individual-contratacao')" class="p-8 bg-white border border-slate-100 rounded-3xl shadow-sm hover:border-be-smart cursor-pointer transition-all"><i data-lucide="user" class="text-be-smart mb-4"></i><h3 class="font-black uppercase italic text-sm">Individual PF</h3></div><div onclick="navigateTo('qualificacao-avancada')" class="p-8 bg-white border border-slate-100 rounded-3xl shadow-sm hover:border-be-smart cursor-pointer transition-all"><i data-lucide="user-search" class="text-be-smart mb-4"></i><h3 class="font-black uppercase italic text-sm">Qualificação</h3></div></div></div>` },
+            ganchos: { 
+                render: () => {
+                    const hookGroups = [
+                        { icon: '🔥', title: 'GANCHOS DE DOR', subtitle: 'QUANDO O CLIENTE NÃO TEM PLANO OU ESTÁ INSEGURO', objective: 'GERAR DESCONFORTO E CONSCIÊNCIA', questions: ["Deixa eu te fazer uma pergunta rápida: se você precisar de atendimento hoje, você tá tranquilo ou seria um problema financeiro?", "Você já percebeu como qualquer emergência hoje pode virar uma dívida gigante?", "A maioria das pessoas só procura plano depois que precisa... você prefere se antecipar ou correr esse risco?"] },
+                        { icon: '💰', title: 'GANCHOS DE ECONOMIA', subtitle: 'PERFEITO PRA QUEM JÁ TEM PLANO OU ACHA CARO', objective: 'ABRIR CONVERSA SEM RESISTÊNCIA', questions: ["Hoje você sente que paga justo no seu plano ou acha que pode estar pagando mais do que deveria?", "Se eu te mostrar uma forma de manter ou melhorar seu plano pagando menos, faz sentido pra você?", "Posso te mostrar como algumas pessoas estão economizando até 30% no plano sem perder cobertura?"] },
+                        { icon: '⚡', title: 'GANCHOS DE URGÊNCIA', subtitle: 'FUNCIONA MUITO BEM EM CAMPANHAS OU FOLLOW-UP', objective: 'ACELERAR DECISÃO', questions: ["Te chamei porque essa semana tivemos atualização nas tabelas e pode impactar direto no valor do seu plano.", "Alguns planos estão mudando regras de entrada... você já está protegido ou ainda está vendo isso?", "Se você decidir depois, pode acabar pagando mais caro ou pegando mais carência."] },
+                        { icon: '🧠', title: 'GANCHOS DE CURIOSIDADE', subtitle: 'ÓTIMO PRA INICIAR CONVERSA NO WHATSAPP', objective: 'FAZER O CLIENTE RESPONDER', questions: ["Posso te mostrar um erro comum que faz as pessoas pagarem caro em plano de saúde sem perceber?", "Você sabia que existem 3 tipos de plano e a maioria das pessoas escolhe o errado?", "Tem um detalhe no plano de saúde que quase ninguém te explica... quer ver?"] },
+                        { icon: '🛡️', title: 'SEGURANÇA / FAMÍLIA', subtitle: 'MUITO FORTE EMOCIONALMENTE', objective: 'ATIVAR EMOÇÃO + RESPONSABILIDADE', questions: ["Hoje você e sua família estão realmente protegidos em caso de emergência?", "Se acontecer alguma coisa com alguém próximo, você prefere depender do SUS ou ter mais segurança?", "Plano de saúde não é gasto... é proteção. Você já garantiu isso pra sua família?"] },
+                        { icon: '🔄', title: 'GANCHOS DE TROCA', subtitle: 'PORTABILIDADE - PARA QUEM JÁ TEM PLANO', objective: 'ABRIR BRECHA SEM PARECER AGRESSIVO', questions: ["Você sabia que pode melhorar seu plano sem cumprir carência dependendo do seu caso?", "Posso analisar seu plano atual e te mostrar se você está bem posicionado ou perdendo dinheiro?", "Muita gente não sabe, mas dá pra trocar de plano e manter os benefícios... quer ver como funciona?"] },
+                        { icon: '🎯', title: 'GANCHO DIRETO', subtitle: 'ESTILO FECHADOR - IR DIRETO AO PONTO', objective: 'QUALIFICAR RÁPIDO', questions: ["Me diz uma coisa: hoje o que pesa mais pra você num plano — preço, rede ou cobertura?", "Se eu encontrar um plano que encaixe no seu orçamento, você contrataria agora ou ainda está só pesquisando?"] }
+                    ];
+
+                    return `
+                    <div class="fade-in space-y-10">
+                        <div class="bg-[#0089D1] p-12 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden -mx-2 lg:-mx-4 -mt-4 mb-8">
+                            <div class="relative z-10">
+                                <h2 class="text-6xl font-black italic uppercase tracking-tighter leading-none mb-4">Ganchos de Venda</h2>
+                                <p class="text-blue-100 font-bold uppercase tracking-widest text-lg">Script de abertura de alto impacto New Master</p>
+                            </div>
+                            <div class="absolute right-[-20px] top-1/2 -translate-y-1/2 opacity-20 rotate-12 pointer-events-none">
+                                <svg width="250" height="250" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            ${hookGroups.map(group => `
+                                <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col space-y-6 transition-all hover:shadow-xl relative">
+                                    <div class="flex flex-col">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-2xl">${group.icon}</span>
+                                            <h3 class="font-black text-xl italic uppercase tracking-tighter text-[#0089D1] leading-none">${group.title}</h3>
+                                        </div>
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${group.subtitle}</p>
+                                    </div>
+                                    <div class="space-y-3 flex-1">
+                                        ${group.questions.map(q => `
+                                            <div class="group relative">
+                                                <div class="bg-slate-50 p-5 pr-12 rounded-2xl text-slate-600 font-semibold text-sm italic border border-transparent transition-all hover:border-[#0089D1]/30 hover:bg-white hover:shadow-md cursor-pointer" onclick="handleCopy('${q.replace(/'/g, "\\'")}')">
+                                                    "${q}"
+                                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="copy" class="w-4 h-4 text-slate-300"></i></div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div class="pt-4 mt-auto">
+                                        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 rounded-full text-[#0089D1]">
+                                            <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
+                                            <span class="text-[9px] font-black uppercase tracking-widest">OBJETIVO: ${group.objective}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+                }
+            },
+            followup: { 
+                render: () => {
+                    const followupStages = [
+                        { day: '📍 D0', title: 'PRIMEIRO CONTATO', subtitle: 'ENVIO DA PROPOSTA', objective: 'DEIXAR O CANAL ABERTO', color: 'bg-indigo-500', messages: ["Fala, [Nome]! Conforme conversamos, te enviei as opções de plano de saúde com melhor custo-benefício. Separei pensando no que você me falou. Dá uma olhada com calma e qualquer dúvida me chama 👍"] },
+                        { day: '📍 D1', title: 'CHECK-IN', subtitle: '1 DIA DEPOIS', objective: 'SABER SE CONSEGUIU LER', color: 'bg-blue-500', messages: ["Oi, [Nome]! Conseguiu dar uma olhada nas opções que te mandei? Se quiser, posso te indicar direto a melhor escolha pra você baseado no que você precisa."] },
+                        { day: '📍 D3', title: 'OBJEÇÃO SILENCIOSA', subtitle: '3 DIAS DEPOIS', objective: 'IDENTIFICAR TRAVAS DE PREÇO/REDE', color: 'bg-amber-500', messages: ["[Nome], muitos clientes meus ficam na dúvida nessa etapa entre preço e qualidade. Se for o seu caso, me fala o que tá pesando mais aí que eu te ajudo a ajustar."] },
+                        { day: '📍 D5', title: 'URGÊNCIA / ESPECIFICIDADE', subtitle: '5 DIAS DEPOIS', objective: 'ACELERAR O FECHAMENTO', color: 'bg-orange-600', messages: ["[Nome], só um ponto importante: alguns planos podem sofrer reajuste nos próximos dias. Vale a pena já garantir nessas condições. Posso te ajudar com isso agora?"] },
+                        { day: '📍 D7', title: 'DESPEDIDA ELEGANTE', subtitle: '7 DIAS DEPOIS', objective: 'LIMPAR O FUNIL / TIRAR PRESSÃO', color: 'bg-slate-600', messages: ["[Nome], não sei se você já resolveu a questão do plano de saúde. Se ainda estiver vendo isso, posso te ajudar. Se já resolveu, me avisa também 👍"] }
+                    ];
+
+                    return `
+                    <div class="fade-in space-y-10">
+                        <div class="bg-[#1E293B] p-10 rounded-b-[3rem] text-white shadow-2xl relative overflow-hidden -mx-6 lg:-mx-10 -mt-10 mb-10 border-b-4 border-indigo-400">
+                            <div class="relative z-10">
+                                <h2 class="text-5xl font-black italic uppercase tracking-tighter leading-none mb-4">Estratégia Follow-up</h2>
+                                <p class="text-indigo-300 font-bold uppercase tracking-[0.3em] text-xs">Onde o dinheiro realmente é feito</p>
+                            </div>
+                            <div class="absolute right-[-20px] bottom-[-20px] opacity-10 rotate-12 pointer-events-none"><i data-lucide="refresh-cw" class="w-64 h-64"></i></div>
+                        </div>
+                        <div class="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 flex items-start gap-4">
+                            <div class="p-3 bg-indigo-100 rounded-2xl text-indigo-600"><i data-lucide="info" class="w-6 h-6"></i></div>
+                            <div>
+                                <h4 class="font-black text-indigo-900 uppercase text-xs tracking-widest mb-1">REGRA DE OURO</h4>
+                                <p class="text-indigo-700 text-sm font-medium italic">"O dinheiro está no acompanhamento, não no primeiro contato. Quem não faz follow-up organizado, vive de sorte."</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-6 pb-12">
+                            ${followupStages.map(stage => `
+                                <div class="bg-white p-6 lg:p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col lg:flex-row gap-6 transition-all hover:shadow-lg">
+                                    <div class="lg:w-64 shrink-0 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-slate-100 pb-4 lg:pb-0 lg:pr-6">
+                                        <span class="text-xs font-black ${stage.color.replace('bg-', 'text-')} mb-1">${stage.day}</span>
+                                        <h3 class="font-black text-lg text-slate-800 leading-tight uppercase italic">${stage.title}</h3>
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">${stage.subtitle}</p>
+                                    </div>
+                                    <div class="flex-1 space-y-4">
+                                        ${stage.messages.map(msg => `
+                                            <div class="group relative">
+                                                <div class="bg-slate-50 p-5 pr-12 rounded-2xl text-slate-600 font-semibold text-sm italic border border-transparent transition-all hover:border-indigo-200 hover:bg-white hover:shadow-md cursor-pointer" onclick="handleCopy('${msg.replace(/'/g, "\\'")}')">
+                                                    "${msg}"
+                                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="copy" class="w-4 h-4 text-indigo-400"></i></div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                        <div class="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-lg w-fit">
+                                            <i data-lucide="target" class="w-3 h-3 text-slate-500"></i>
+                                            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">OBJETIVO: ${stage.objective}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+                }
+            },
+            'qualificacao-spin': { 
+                render: () => {
+                    const spinData = [
+                        { id: 'S', title: 'SITUAÇÃO', subtitle: 'ENTENDER O CENÁRIO ATUAL DO CLIENTE.', color: 'bg-sky-400', questions: ["Hoje você já tem plano de saúde ou ainda não?", "É só pra você ou mais alguém da família?", "Qual sua idade e cidade?", "Hoje você usa bastante plano ou é mais segurança?"] },
+                        { id: 'P', title: 'PROBLEMA', subtitle: 'IDENTIFICAR AS DORES REAIS.', color: 'bg-blue-600', questions: ["O que te fez ainda não contratar um plano?", "O que te incomoda no seu plano atual?", "Você sente que paga justo ou poderia ser melhor?", "Se acontecer uma emergência hoje, como você resolveria?"] },
+                        { id: 'I', title: 'IMPLICAÇÃO', subtitle: 'AUMENTAR O PESO E A URGÊNCIA DO PROBLEMA.', color: 'bg-orange-500', questions: ["E se você precisar usar e não tiver cobertura adequada, isso te geraria problema?", "Se continuar pagando esse valor alto, quanto isso pesa no orçamento ao longo do ano?", "Se acontecer algo com alguém da sua família, como isso impacta você hoje?"] },
+                        { id: 'N', title: 'NECESSIDADE', subtitle: 'FAZER O CLIENTE DESEJAR A SUA SOLUÇÃO.', color: 'bg-emerald-500', questions: ["Se eu te mostrar uma opção que resolva isso, faz sentido pra você?", "O ideal pra você hoje seria pagar menos ou ter mais segurança?", "Se encaixar no que você precisa, você fecharia agora?"] }
+                    ];
+
+                    return `
+                    <div class="fade-in space-y-8">
+                        <div class="bg-[#0F172A] p-10 rounded-b-[3rem] text-white shadow-2xl relative overflow-hidden -mx-6 lg:-mx-10 -mt-10 mb-10">
+                            <div class="relative z-10">
+                                <h2 class="text-5xl font-black italic uppercase tracking-tighter leading-none mb-4">Script SPIN Selling</h2>
+                                <p class="text-blue-400 font-bold uppercase tracking-[0.3em] text-xs">A arte de conduzir o cliente ao fechamento</p>
+                            </div>
+                            <i data-lucide="zap" class="absolute right-[-40px] bottom-[-40px] w-64 h-64 opacity-5 -rotate-12"></i>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-10">
+                            ${spinData.map(item => `
+                                <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col space-y-6">
+                                    <div class="flex items-center gap-5">
+                                        <div class="w-14 h-14 ${item.color} rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-black/5 shrink-0">${item.id}</div>
+                                        <div>
+                                            <h3 class="font-black text-xl italic uppercase tracking-tighter text-slate-800 leading-none">${item.title}</h3>
+                                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">${item.subtitle}</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        ${item.questions.map(q => `
+                                            <div class="group relative">
+                                                <div class="bg-slate-50 p-4 pr-12 rounded-2xl text-slate-600 font-semibold text-sm italic border border-transparent transition-all hover:border-slate-200 hover:bg-white hover:shadow-md cursor-pointer" onclick="handleCopy('${q.replace(/'/g, "\\'")}')">
+                                                    "${q}"
+                                                    <div class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="copy" class="w-4 h-4 text-slate-300"></i></div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+                }
+            },
+            'qualificacao-avancada': {
+                render: () => {
+                    const questions = ["Quem vai utilizar o plano além de você?", "Idade aproximada dos beneficiários?", "Atualmente possui plano?", "Faz questão de algum hospital/clínica?", "Possui CNPJ ativo?", "Vínculo com entidade/profissão?", "Incluirá funcionários?", "Situação específica (cirurgia/exame)?", "Já recebeu outra proposta?"];
+                    return `
+                    <div class="fade-in space-y-6 text-left">
+                        <div class="bg-amber-600 p-8 rounded-3xl text-white shadow-lg flex items-center gap-6">
+                            <div class="p-3 bg-white/20 rounded-2xl"><i data-lucide="clipboard-check" class="w-8 h-8"></i></div>
+                            <div>
+                                <h2 class="text-3xl font-black uppercase italic tracking-tighter leading-none">Qualificação Avançada</h2>
+                                <p class="text-amber-100 text-[10px] font-bold uppercase tracking-widest mt-2">Diagnóstico Cirúrgico Be Smart</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            <div class="lg:col-span-8 space-y-3">
+                                ${questions.map((q, i) => `
+                                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-amber-400 transition-all">
+                                        <div class="flex items-center gap-4">
+                                            <span class="text-amber-600 font-black text-sm">${i + 1}.</span>
+                                            <p class="text-slate-700 font-semibold text-sm">${q}</p>
+                                        </div>
+                                        <button onclick="handleCopy('${q.replace(/'/g, "\\'")}')" class="p-2 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="lg:col-span-4 space-y-6">
+                                <div class="bg-[#0F172A] p-6 rounded-3xl text-white shadow-xl">
+                                    <h4 class="text-amber-500 font-black text-xs uppercase tracking-widest mb-4">Dicas</h4>
+                                    <ul class="space-y-4 text-xs font-medium text-slate-300 italic">
+                                        <li class="flex items-start gap-2"><i data-lucide="info" class="w-3 h-3 mt-0.5 shrink-0"></i>Não faça tudo de uma vez.</li>
+                                        <li class="flex items-start gap-2"><i data-lucide="info" class="w-3 h-3 mt-0.5 shrink-0"></i>Conduza como conversa natural.</li>
+                                        <li class="flex items-start gap-2"><i data-lucide="info" class="w-3 h-3 mt-0.5 shrink-0"></i>Escute mais do que fala.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            }
+        };
+
+        function toggleSubmenu(id) {
+            const sub = document.getElementById(`sub-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            const isHidden = sub.classList.toggle('hidden');
+            icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(90deg)';
+        }
+
+        function handleManualCopy(mod, section) {
+            let text = section ? technicalData[mod][section] : otherData[mod].content;
+            handleCopy(text);
+        }
+
+        function navigateTo(id) {
+            const area = document.getElementById('content-area');
+            let contentHtml = '';
+            document.querySelectorAll('.nav-item, .submenu-item').forEach(el => el.classList.toggle('sidebar-item-active', el.getAttribute('data-tab') === id));
+            if (id.includes('-')) {
+                const parts = id.split('-');
+                const mod = parts[0], section = parts[1];
+                if (otherData[id]) {
+                    const item = otherData[id];
+                    contentHtml = item.render ? item.render() : createGenericView(item.title, item.content, id);
+                } else if (technicalData[mod] && technicalData[mod][section]) {
+                    const item = technicalData[mod];
+                    const titles = { contratacao: "Contratação", vigencia: "Vigência", carencia: "Carência", documentacao: "Documentação", reajuste: "Reajuste", cancelamento: "Cancelamento", preco: "Preço", total: "Coparticipação Total", parcial: "Coparticipação Parcial", sem: "Sem Coparticipação", ambulatorial: "Ambulatorial", hospitalar: "Hospitalar", sob: "Sem Obstetrícia", cob: "Com Obstetrícia", completo: "Plano Completo", enfermaria: "Enfermaria (Coletivo)", apartamento: "Apartamento (Privativo)", diferencas: "Quadro Comparativo" };
+                    contentHtml = createGenericView(titles[section], item[section], mod, section);
+                }
+            } else {
+                const item = otherData[id];
+                contentHtml = item.render ? item.render() : createGenericView(item.title, item.content, id);
+            }
+            area.innerHTML = contentHtml;
+            lucide.createIcons();
+            if (window.innerWidth < 1024) document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
+
+        function createGenericView(title, content, mod, section = null) {
+            return `<div class="fade-in max-w-4xl mx-auto space-y-8 text-left"><div class="bg-white rounded-[3rem] shadow-xl border overflow-hidden border-slate-100"><div class="p-10 bg-[#0F0A1A] text-white"><h2 class="text-4xl font-black italic uppercase tracking-tighter">${title}</h2></div><div class="p-10"><div class="bg-slate-50 p-8 rounded-3xl border border-dashed border-slate-200"><p class="whitespace-pre-line text-slate-700 text-lg font-medium leading-relaxed">${content}</p></div><button onclick="handleManualCopy('${mod}', ${section ? `'${section}'` : 'null'})" class="mt-8 flex items-center gap-3 px-10 py-4 bg-be-smart text-white rounded-2xl font-black uppercase text-xs shadow-xl hover:scale-105 transition-all"><i data-lucide="copy" class="w-4 h-4"></i> Copiar Informação</button></div></div></div>`;
+        }
+
+        function handleCopy(text) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            const notif = document.getElementById('notif');
+            notif.classList.remove('translate-y-32');
+            setTimeout(() => notif.classList.add('translate-y-32'), 2500);
+        }
+
+        document.getElementById('mobile-toggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('-translate-x-full'));
+        window.onload = () => { lucide.createIcons(); navigateTo('dashboard'); };
+    </script>
+</body>
+</html>
