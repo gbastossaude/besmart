@@ -1085,7 +1085,10 @@ input[type=file]::file-selector-button { font: 700 12.5px var(--f-ui); height: 3
   .bottom-nav a.active::before { content: ''; position: absolute; top: 0; width: 22px; height: 3px; border-radius: 0 0 3px 3px; background: var(--blue); }
   .bottom-nav .nav-count { position: absolute; top: 4px; left: calc(50% + 6px); margin: 0; min-width: 18px; padding: 0 5px; font-size: 10px; }
   body.has-layer .bottom-nav { visibility: hidden; }
-  #toasts { right: 12px; left: 12px; align-items: stretch; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  /* no celular os avisos aparecem no topo: não cobrem a navegação nem os botões das janelas */
+  #toasts { right: 12px; left: 12px; align-items: stretch; top: calc(10px + env(safe-area-inset-top, 0px)); bottom: auto; }
+  .toast { transform: translateY(-10px); }
+  #offline-bar { top: auto; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
   .toast { max-width: none; }
   body.tv-mode .bottom-nav { display: none; }
 }

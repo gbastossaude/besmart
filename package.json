@@ -1,25 +1,23 @@
 {
-  "name": "besmart",
-  "version": "1.0.0",
-  "description": "Gestão comercial para corretoras de planos de saúde: leads, CRM, distribuição, follow-ups, agenda com convites, vendas, implantação integrada ao CRM, clientes, comissões com grade por produto e por corretor, metas, ranking, relatórios, presença da equipe e auditoria.",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
+  "name": "atos-sistema",
+  "version": "1.4.0",
+  "private": true,
+  "description": "Atos Sistema — gestão comercial para corretoras de planos de saúde (BeSmart).",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:sql": "sh build_sql.sh",
+    "build:preview": "python3 build_preview.py",
+    "test:db": "node test/rls.test.mjs",
+    "test:demo": "node test/demo.test.mjs",
+    "test:sql07": "node test/sql07_check.mjs",
+    "test:ui": "python3 build_preview.py && python3 test/ui_test.py && python3 test/ui_v14_test.py",
+    "test": "npm run build:sql && npm run test:db && npm run test:demo && npm run test:sql07",
+    "serve": "npx -y http-server web -p 8080 -c-1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gbastossaude/besmart.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/gbastossaude/besmart/issues"
-  },
-  "homepage": "https://github.com/gbastossaude/besmart#readme",
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8"
   }

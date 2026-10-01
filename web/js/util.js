@@ -341,7 +341,8 @@
   const drawer = o => openLayer('drawer', { size: 'lg', ...o });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if (document.querySelector('.popmenu')) return;          // o menu aberto fecha primeiro
+    const pm = document.querySelector('.popmenu');           // o menu aberto fecha primeiro
+    if (pm) { pm.fechar ? pm.fechar(true) : pm.remove(); return; }
     if (stack.length) stack[stack.length - 1].close();
   });
 

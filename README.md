@@ -1,4 +1,4 @@
-# Atos Sistema — v1.1
+# Atos Sistema — v1.4
 
 Gestão comercial para corretoras de planos de saúde: leads, CRM, distribuição, follow-ups,
 agenda com convites, vendas, implantação integrada ao CRM, clientes, comissões com grade por
@@ -7,7 +7,67 @@ produto e por corretor, metas, ranking, relatórios, presença da equipe e audit
 Hierarquia **Administrador → Gerente → Supervisor → Corretor** garantida no banco (RLS):
 cada pessoa só enxerga a própria estrutura, mesmo acessando a API diretamente.
 
+> O `index.html` na raiz do repositório é o playbook de vendas **BeSmart** (página independente).
+> O sistema Atos fica na pasta `web/`.
+
 ---
+
+## O que há de novo na v1.4
+
+**Correções**
+
+| Problema | O que mudou |
+|---|---|
+| Entre 21h e 0h (horário de Brasília) o banco, em UTC, já estava no dia seguinte: contato recém-feito aparecia com **-1 dia sem contato**, e venda/implantação ganhava a data de amanhã | Datas de "hoje" calculadas no fuso de São Paulo (relacionamento, lembretes, data da venda, implantação, pendências atrasadas) |
+| O **link da reunião** aceitava `javascript:` — quem clicasse em "Entrar na reunião" executava código na própria sessão | Link só com `https://` (validado na tela **e** no banco); links antigos inválidos são limpos |
+| Cliques repetidos em "Salvar", "Enviar", "Concluir"… podiam **gravar em dobro** | Todo botão com ação fica desabilitado, com indicador, até a ação terminar |
+| "Marcar como prioritário" em lote mostrava sucesso mesmo quando falhava | Informa quantos foram alterados e quantos não puderam ser |
+| Busca do CRM e de Leads: digitando rápido, um resultado antigo podia substituir o novo | Só o resultado da última busca é exibido |
+| Follow-ups no celular: o **nome do contato sumia** e o botão "Concluir" ficava fora da tela | Listas reorganizam o conteúdo em telas estreitas |
+| Mensagens técnicas na tela (`Failed to fetch`, `violates check constraint`, `JWT expired`…) | Mensagens claras para falta de conexão, tempo esgotado, sessão expirada, servidor instável e dados inválidos (o detalhe técnico vai para o console) |
+| Uma falha de carregamento deixava a seção "carregando" para sempre | A seção mostra o erro com **Tentar novamente** |
+| Login: sem validação, sem indicação de progresso; a auditoria de login podia impedir a entrada | Validação, "Entrando…", mostrar senha, último e-mail lembrado; a auditoria não bloqueia mais o acesso |
+
+**Experiência e visual**
+
+| Recurso | Onde |
+|---|---|
+| **Tema claro**, escuro ou igual ao do sistema | Menu do usuário → Aparência |
+| **Celular**: navegação inferior, filtros recolhidos em "Filtros (n)", tabelas viram cartões, janelas abrem de baixo para cima, avisos no topo, sem rolagem lateral em nenhuma tela | automático |
+| Erro mostrado **no próprio campo** do formulário (obrigatório, e-mail, CPF, CNPJ, telefone, link) | Formulários |
+| Aviso fixo de **sem conexão** e recarga automática quando a internet volta | automático |
+| **Sessão expirada** volta para o login com a explicação | automático |
+| **Atalhos de teclado**: `Ctrl/⌘ K` busca, `N` novo, `G` + `D/C/L/A/V/F/T` navega, `?` ajuda | Menu do usuário → Atalhos |
+| Acessibilidade: foco preso e devolvido nas janelas, menus por teclado, linhas de tabela e cartões acionáveis com Enter, contraste AA nos textos pequenos, "Pular para o conteúdo", áreas de toque maiores | — |
+
+**Desempenho e segurança**
+
+| Item | Detalhe |
+|---|---|
+| `demo.js` (~180 KB) não é mais baixado em produção | só no modo demonstração |
+| Atualizações automáticas pausam com a aba em segundo plano | menos consultas ao banco |
+| Requisições com limite de tempo (30 s; 5 min para envio de arquivo) | nenhuma tela espera para sempre |
+| `web/_headers` (Netlify): CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, HSTS | publicado junto com a pasta `web` |
+| Storage: envio só por usuário **ativo** e na **própria pasta**; só PDF, imagem e Word | `07_supabase_storage_cron.sql` |
+| Exportação CSV não executa fórmulas ao abrir no Excel (`=`, `+`, `-`, `@`) | Exportar |
+| Edge Functions: token comparado em tempo constante, limite de tamanho, erros sem detalhes internos, link do convite fixável por `ATOS_SITE_URL` | `supabase/functions` |
+| Índices novos para relacionamento, follow-ups do cliente e comissões do corretor | `09_atualizacao_v1_4.sql` |
+
+## Atualizar para a v1.4 (de qualquer versão anterior)
+
+Nenhum dado é apagado. Os scripts podem ser executados mais de uma vez.
+
+1. **Banco** — Supabase → *SQL Editor* → cole todo o `sql/atos_completo.sql` → **Run**
+   (já inclui o novo `09_atualizacao_v1_4.sql`).
+2. **Storage** — rode de novo o `sql/07_supabase_storage_cron.sql` (aplica a nova regra de envio de arquivos).
+3. **Site** — publique a pasta `web` inteira no Netlify (inclui o novo arquivo `_headers`).
+   Se o seu Supabase usar um domínio próprio (não `*.supabase.co`), ajuste o `connect-src` em `web/_headers`.
+4. **Edge Functions** — atualize `convidar-usuario` e `receber-lead`. Opcional: defina o segredo
+   `ATOS_SITE_URL` com o endereço do site (ex.: `https://atos.netlify.app`) para o link do convite.
+
+---
+
+## Histórico — v1.1 a v1.3
 
 ## O que há de novo na v1.1
 
@@ -102,12 +162,22 @@ Aceita vírgula decimal e colunas pelo código ou pelo nome da grade.
 
 ```
 sql/            01 estrutura · 02 funções/triggers · 03 RLS · 04 views · 05 RPCs · 06 configuração
-                08 atualização v1.1 · atos_completo.sql (tudo junto) · 07 Supabase (storage, cron, realtime)
-web/            site (HTML + CSS + JS, sem build) — publicar no Netlify
+                08 atualização v1.1 · 09 atualização v1.4 · atos_completo.sql (tudo junto)
+                07 Supabase (storage, cron, realtime)
+web/            site (HTML + CSS + JS, sem build) — publicar no Netlify (inclui _headers)
 supabase/       Edge Functions
 test/           testes do banco (PGlite), do motor de demonstração e da interface (Playwright)
 dist/           prévia em arquivo único (modo demonstração)
 ```
 
-Testes: `node test/rls.test.mjs` · `node test/upgrade.test.mjs` · `node test/demo.test.mjs` ·
-`python3 test/ui_test.py` (depois de `python3 build_preview.py`).
+### Testes
+
+```
+npm install                 # instala o PGlite (PostgreSQL em memória) para os testes do banco
+npm test                    # SQL completo + RLS/regras (190) + motor de demonstração (51) + script 07
+pip install playwright      # testes de interface
+npm run test:ui             # 35 telas × 4 perfis + testes da v1.4 (login, erros, segurança, tema, celular)
+```
+
+Se o Chromium do Playwright não estiver instalado, aponte para um existente com `PW_CHROMIUM=/caminho/do/chrome`.
+O `test/upgrade.test.mjs` precisa do arquivo `test/atos_v1_0.sql` (banco v1.0 de referência), que não acompanha este pacote.
