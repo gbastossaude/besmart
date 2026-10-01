@@ -143,7 +143,14 @@
       async rpc(fn, params = {}) { const r = chk(await sb.rpc(fn, params)); return r.data; },
       async upload(path, file) {
         if (file && file.size > 20 * 1024 * 1024) throw new ApiError({ message: 'O arquivo tem mais de 20 MB. Reduza o tamanho e envie novamente.' });
-        const { error } = await sb.storage.from('documentos').upload(path, file, { upsert: false }); if (error) throw new ApiError(error); return path;
+        // alguns celulares não informam o tipo (ex.: HEIC); deduz pela extensão
+        const ext = String(file && file.name || '').split('.').pop().toLowerCase();
+        const porExt = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', heif: 'image/heif', webp: 'image/webp', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
+        const contentType = (file && file.type) || porExt[ext];
+        if (!contentType) throw new ApiError({ message: 'Tipo de arquivo não aceito. Envie PDF, imagem (JPG, PNG, HEIC) ou Word.' });
+        const { error } = await sb.storage.from('documentos').upload(path, file, { upsert: false, contentType });
+        if (error) throw new ApiError(/mime|type.*not supported|invalid_mime/i.test(error.message || '') ? { message: 'Tipo de arquivo não aceito. Envie PDF, imagem (JPG, PNG, HEIC) ou Word.' } : error);
+        return path;
       },
       subscribe(uid, fn) {
         try {
@@ -173,10 +180,32 @@
       throw new Error('Biblioteca do Supabase não carregada');
     }
     backend = SupabaseBackend(cfg);
-  } else backend = global.DemoBackend.create();
-  console.info('[Atos] modo:', backend.mode, hasSupabase ? cfg.SUPABASE_URL : '(sem config.js preenchido)');
+  }
 
-  global.API = backend;
+  // O motor de demonstração (demo.js, ~180 KB) só é baixado quando não há
+  // Supabase configurado — em produção ele nunca é carregado.
+  const pronto = hasSupabase ? Promise.resolve() : new Promise((res, rej) => {
+    const criar = () => { backend = global.DemoBackend.create(); res(); };
+    if (global.DemoBackend) return criar();
+    const s = document.createElement('script');
+    s.src = 'js/demo.js?v=1.4'; s.onload = criar;
+    s.onerror = () => rej(new Error('Não foi possível carregar a demonstração. Recarregue a página.'));
+    document.head.appendChild(s);
+  });
+  pronto.then(() => console.info('[Atos] modo:', backend.mode, hasSupabase ? cfg.SUPABASE_URL : '(sem config.js preenchido)'), () => {});
+
+  // Fachada estável: os módulos guardam `API` ao carregar; as chamadas vão para o motor ativo.
+  const modo = hasSupabase ? 'supabase' : 'demo';
+  global.API = new Proxy({}, {
+    get(_, k) {
+      if (k === 'ready') return () => pronto;
+      if (k === 'mode') return modo;
+      if (!backend) return undefined;
+      const v = backend[k];
+      return typeof v === 'function' ? v.bind(backend) : v;
+    },
+    has(_, k) { return k === 'ready' || k === 'mode' || (!!backend && k in backend); },
+  });
   global.ApiError = ApiError;
   global.apiFriendly = friendly;
 })(window);

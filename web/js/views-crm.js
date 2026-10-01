@@ -57,8 +57,9 @@
   Views.crm = async function () {
     const state = { corretor_id: null, temperatura: null, prioritario: false, source_id: null, search: '', finalizados: true, ...(U.store('crm.f') || {}) };
     const wrap = h('div'); const board = h('div', { class: 'kanban' }); const filters = h('div', { class: 'filters' });
-    let leads = [];
+    let leads = [], seqLoad = 0;
     const load = async () => {
+      const seq = ++seqLoad;
       U.store('crm.f', state);
       const base = { ...(state.corretor_id ? { eq: { corretor_id: state.corretor_id } } : {}) };
       const extra = o => { const x = { ...o, eq: { ...(o.eq || {}), ...(base.eq || {}) } }; if (state.temperatura) x.eq.temperatura = state.temperatura; if (state.prioritario) x.eq.prioritario = true; if (state.source_id) x.eq.source_id = state.source_id;
@@ -66,6 +67,7 @@
       const reqs = [API.all('v_leads', extra({ eq: { etapa_tipo: 'aberto' }, order: [['etapa_desde', true]] }))];
       if (state.finalizados) reqs.push(API.all('v_leads', extra({ in: { etapa_tipo: ['ganho', 'perdido'] }, gte: { updated_at: dates.addDays(dates.today(), -30) }, order: [['updated_at', false]] })));
       const r = await Promise.all(reqs);
+      if (seq !== seqLoad) return;     // chegou uma busca mais nova
       leads = r.flat();
       paint();
     };
@@ -161,18 +163,27 @@
       if (!sel.size || !App.gestor()) return;
       bulk.appendChild(h('div', { class: 'bulkbar' }, `${sel.size} selecionado(s)`, h('span', { class: 'grow' }),
         App.can('leads.distribuir') ? h('button', { class: 'btn sm', onclick: async () => { const rows = (await API.all('v_leads', { in: { id: [...sel] } })); Forms.distribute(rows, { onDone: () => { sel.clear(); load(); } }); } }, icon('shuffle', 14), 'Distribuir / transferir') : null,
-        h('button', { class: 'btn sm', onclick: async () => { for (const id of sel) await API.update('leads', id, { prioritario: true }).catch(() => { }); sel.clear(); load(); toast('Marcados como prioritários'); } }, icon('star', 14), 'Prioritário'),
+        h('button', { class: 'btn sm', onclick: async () => {
+          let ok = 0, falhas = 0;
+          for (const id of sel) { try { await API.update('leads', id, { prioritario: true }); ok++; } catch (e) { falhas++; console.warn(e); } }
+          sel.clear(); load();
+          if (!falhas) toast(`${ok} lead(s) marcado(s) como prioritário(s)`);
+          else toast(`${ok} marcado(s); ${falhas} não puderam ser alterados (sem permissão ou removidos).`, ok ? 'info' : 'err');
+        } }, icon('star', 14), 'Prioritário'),
         App.can('leads.excluir') ? h('button', { class: 'btn sm danger', onclick: async () => { if (!(await confirmDialog({ title: 'Arquivar leads', message: `Arquivar ${sel.size} lead(s)? O histórico é preservado (exclusão lógica).`, confirm: 'Arquivar', danger: true }))) return; for (const id of sel) await API.softDelete('leads', id).catch(App.err); sel.clear(); load(); } }, icon('trash', 14), 'Arquivar') : null,
         h('button', { class: 'btn sm ghost', onclick: () => { sel.clear(); load(); } }, 'Limpar')));
     };
+    let seqLoad = 0;
     const load = async () => {
+      const seq = ++seqLoad;
       clear(tableBox).appendChild(U.skeleton(8));
       try {
         const { rows, count } = await API.list('v_leads', opts());
+        if (seq !== seqLoad) return;   // chegou uma busca mais nova
         clear(tableBox).append(U.table(cols, rows, { onRow: l => App.go('/leads/' + l.id), selectable: App.gestor(), selected: sel, onSelect: paintBulk, sortState: state.sort, onSort: k => { state.sort = [k, state.sort[0] === k ? !state.sort[1] : false]; load(); } }),
           U.pager(state.page, state.size, count, p => { state.page = p; load(); }));
         paintBulk();
-      } catch (e) { clear(tableBox).appendChild(empty('Erro ao carregar leads', e.message)); }
+      } catch (e) { if (seq === seqLoad) clear(tableBox).appendChild(U.errorState(e, load)); }
     };
     const selF = (k, label, o) => h('select', { 'aria-label': label, onchange: e => { state[k] = e.target.value || null; state.page = 0; load(); } }, h('option', { value: '' }, label), o.map(x => h('option', { value: x.value, selected: state[k] === x.value || null }, x.label)));
     filters.append(

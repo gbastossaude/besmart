@@ -541,7 +541,8 @@
 
   // Exportação CSV
   function toCSV(cols, rows) {
-    const q = v => { const s = v === null || v === undefined ? '' : String(v); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    // valores que começam com = + - @ viram texto (o Excel não executa como fórmula)
+    const q = v => { let s = v === null || v === undefined ? '' : String(v); if (/^[=+\-@\t\r]/.test(s) && !/^-?\d+([.,]\d+)?$/.test(s)) s = "'" + s; return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     return '﻿' + [cols.map(c => q(c.label)).join(';'), ...rows.map(r => cols.map(c => q(c.value ? c.value(r) : r[c.key])).join(';'))].join('\n');
   }
   function download(name, content, mime = 'text/csv;charset=utf-8') {

@@ -32,7 +32,13 @@
     },
   };
   // qualquer promessa rejeitada sem tratamento vira um aviso claro, nunca um erro silencioso
-  global.addEventListener('unhandledrejection', ev => { ev.preventDefault(); App.err(ev.reason); });
+  global.addEventListener('unhandledrejection', ev => {
+    ev.preventDefault(); App.err(ev.reason);
+    // se uma seção ficou "carregando" por causa da falha, mostra o erro com a opção de tentar de novo
+    const motivo = ev.reason instanceof global.ApiError ? ev.reason : { message: global.apiFriendly(ev.reason) };
+    if (motivo.sessao) return;
+    document.querySelectorAll('#content .skel-wrap:not(.page-loading .skel-wrap)').forEach(sk => sk.replaceWith(U.errorState(motivo, () => App.reload())));
+  });
   global.addEventListener('error', ev => { if (ev.error) console.error('[Atos] erro inesperado', ev.error); });
 
   async function sessaoExpirada() {
@@ -154,6 +160,7 @@
   App.start = async function () {
     bootScreen(API.mode === 'demo' ? 'Preparando demonstração' : 'Conectando');
     try {
+      await API.ready();
       const uid = await API.session();
       if (!uid) return loginScreen();
       await enter(uid);
@@ -219,10 +226,15 @@
     const marca = () => { ultimaAcao = Date.now(); };
     ['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => document.addEventListener(ev, marca, { passive: true }));
     const t1 = setInterval(() => { if (Date.now() - ultimaAcao < 5 * 60e3 && !document.hidden) App.presenca(); }, 60e3);
-    const t2 = setInterval(() => { if (API.tick) API.tick(); checarNovas(); App.refreshCounts(); }, API.mode === 'demo' ? 20e3 : 45e3);
+    // em segundo plano não consulta o servidor; ao voltar para a aba, atualiza na hora
+    const ciclo = () => { if (document.hidden) return; if (API.tick) API.tick(); checarNovas(); App.refreshCounts(); };
+    const t2 = setInterval(ciclo, API.mode === 'demo' ? 20e3 : 45e3);
+    let ocultoDesde = 0;
+    const visib = () => { if (document.hidden) { ocultoDesde = Date.now(); return; } if (ocultoDesde && Date.now() - ocultoDesde > 30e3) { ciclo(); App.presenca(); } ocultoDesde = 0; };
+    document.addEventListener('visibilitychange', visib);
     const sair = () => { try { API.rpc('registrar_saida', {}); } catch (e) { /* */ } };
     global.addEventListener('pagehide', sair);
-    live = { stop() { clearInterval(t1); clearInterval(t2); unsub && unsub(); ['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => document.removeEventListener(ev, marca)); global.removeEventListener('pagehide', sair); } };
+    live = { stop() { clearInterval(t1); clearInterval(t2); unsub && unsub(); ['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => document.removeEventListener(ev, marca)); global.removeEventListener('pagehide', sair); document.removeEventListener('visibilitychange', visib); } };
   }
   function stopLive() { if (live) { live.stop(); live = null; } }
   App.stopLive = stopLive;

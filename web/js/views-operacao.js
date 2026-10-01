@@ -35,8 +35,9 @@
           h('div', { class: 'li-sub' }, [FUL[f.tipo], f.status === 'concluido' ? f.resultado : f.observacao, App.gestor() ? f.responsavel_nome : null].filter(Boolean).join(' · '))),
         badge(f.prioridade, PCOL[f.prioridade]),
         f.telefone_contato ? h('a', { class: 'icon-btn sm hide-sm', href: U.waLink(f.telefone_contato), target: '_blank', rel: 'noopener', title: 'Abrir WhatsApp' }, icon('whatsapp', 16)) : null,
-        f.status === 'pendente' ? h('button', { class: 'btn xs', onclick: () => Forms.followup({}, { existing: f, onDone: load }) }, 'Reagendar') : null,
-        f.status === 'pendente' ? h('button', { class: 'btn xs primary', onclick: () => Forms.concluirFollowup(f, { onDone: load }) }, icon('check', 13), 'Concluir') : null);
+        f.status === 'pendente' ? h('div', { class: 'li-actions' },
+          h('button', { class: 'btn xs', onclick: () => Forms.followup({}, { existing: f, onDone: load }) }, 'Reagendar'),
+          h('button', { class: 'btn xs primary', onclick: () => Forms.concluirFollowup(f, { onDone: load }) }, icon('check', 13), 'Concluir')) : null);
     };
     const load = async () => {
       const counts = await Promise.all(['atrasado', 'hoje', 'proximo', 'concluido'].map(k => API.list('v_followups', { ...q[k](), count: true, limit: 1 })));

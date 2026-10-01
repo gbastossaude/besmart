@@ -39,17 +39,24 @@ Deno.serve(async (req) => {
   const papel = String(b.papel || 'corretor');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !nome) return json({ error: 'Informe nome e e-mail válidos' }, 400);
   if (!['admin', 'gerente', 'supervisor', 'corretor'].includes(papel)) return json({ error: 'Papel inválido' }, 400);
+  if (nome.length > 120 || email.length > 254) return json({ error: 'Nome ou e-mail longo demais' }, 400);
 
   // 3) convite (a pessoa recebe o e-mail para criar a senha)
-  const redirectTo = req.headers.get('origin') || undefined;
+  // Endereço de retorno: o do site configurado (ATOS_SITE_URL) ou a origem da chamada
+  const site = Deno.env.get('ATOS_SITE_URL') || '';
+  const origem = req.headers.get('origin') || '';
+  const redirectTo = site || (/^https:\/\//.test(origem) ? origem : undefined);
   const { data: inv, error } = await admin.auth.admin.inviteUserByEmail(email, { data: { nome }, redirectTo });
-  if (error) return json({ error: error.message.includes('already') ? 'Este e-mail já tem cadastro' : error.message }, 400);
+  if (error) {
+    console.error('inviteUserByEmail', error);
+    return json({ error: error.message.includes('already') ? 'Este e-mail já tem cadastro' : 'Não foi possível enviar o convite agora. Tente novamente em instantes.' }, 400);
+  }
 
   // 4) perfil já aprovado com papel, equipe e grade de comissão
   const patch: Record<string, unknown> = { nome, papel, status: 'ativo' };
   if (papel === 'corretor') { patch.team_id = b.team_id || null; patch.grade_comissao = b.grade_comissao || 'bronze'; }
   if (papel === 'supervisor') patch.gerente_id = b.gerente_id || null;
   const { error: e2 } = await admin.from('profiles').update(patch).eq('id', inv.user!.id);
-  if (e2) return json({ ok: true, aviso: 'Convite enviado, mas ajuste o perfil em Configurações: ' + e2.message });
+  if (e2) { console.error('perfil do convidado', e2); return json({ ok: true, aviso: 'Convite enviado, mas ajuste o papel e a equipe em Configurações → Usuários.' }); }
   return json({ ok: true, id: inv.user!.id });
 });

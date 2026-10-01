@@ -8,7 +8,7 @@ await db.exec(fs.readFileSync('sql/atos_completo.sql', 'utf8'));
 await db.exec(`
   create role supabase_auth_admin; create role service_role_x;
   create schema if not exists extensions; create schema storage; create schema cron;
-  create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint);
+  create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
   create table storage.objects (id uuid default gen_random_uuid(), bucket_id text, name text, owner uuid);
   alter table storage.objects enable row level security;
   create table cron.job (jobid serial primary key, jobname text, schedule text, command text);

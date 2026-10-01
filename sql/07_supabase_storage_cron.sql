@@ -35,13 +35,19 @@ grant execute on function public.processar_alertas_rapidos() to service_role;
 -- Storage: bucket privado "documentos" (20 MB por arquivo)
 -- Caminho: <tipo>/<id do registro>/<arquivo>
 -- ---------------------------------------------------------------------
-insert into storage.buckets (id, name, public, file_size_limit)
-values ('documentos', 'documentos', false, 20971520)
-on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit;
+-- Tipos aceitos: PDF, imagens e Word (o mesmo que a tela de anexos oferece)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('documentos', 'documentos', false, 20971520,
+        array['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp',
+              'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
+-- Envio: somente usuário ATIVO e somente na própria pasta (<id do usuário>/...)
 drop policy if exists atos_docs_upload on storage.objects;
 create policy atos_docs_upload on storage.objects for insert to authenticated
-  with check (bucket_id = 'documentos');
+  with check (bucket_id = 'documentos'
+              and split_part(name, '/', 1) = (select auth.uid())::text
+              and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.status = 'ativo'));
 
 drop policy if exists atos_docs_read on storage.objects;
 create policy atos_docs_read on storage.objects for select to authenticated
