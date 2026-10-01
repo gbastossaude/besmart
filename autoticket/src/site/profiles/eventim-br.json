@@ -1,0 +1,37 @@
+{
+  "id": "eventim-br",
+  "name": "Eventim Brasil",
+  "version": 1,
+  "verified": false,
+  "notes": "Herdado da versão 6. Removida a limpeza de cookies/sessão para driblar bloqueios (HTTP2).",
+  "hosts": ["eventim.com.br"],
+  "pages": {
+    "eventList": ["/artist/"],
+    "event": ["/event/"],
+    "cart": ["/checkout/cart", "re:/checkout/?$"],
+    "checkout": ["/checkout/payment", "/checkout/delivery", "/checkout/overview"],
+    "login": ["/login", "/myAccount"]
+  },
+  "dom": {
+    "challenge": [{ "css": ".cc-captchalayer-box" }],
+    "loading": [{ "css": "#spinner" }]
+  },
+  "texts": {
+    "soldOut": ["esgotado", "indisponivel"],
+    "error": ["desculpe, houve um erro"],
+    "actionFailed": ["nao foi possivel", "limite", "esgotado"]
+  },
+  "eventList": {
+    "items": [{ "css": "#eventSelectionBox li" }, { "css": "#eventSelectionBox a", "text": ["comprar"] }, { "css": "[data-qa=\"event-listing-item\"]" }],
+    "clickTarget": "a"
+  },
+  "steps": [
+    {
+      "id": "categoria", "kind": "pick", "label": "Categoria", "source": "sectors", "probe": true,
+      "items": [{ "css": "[data-qa=\"ticket-type\"]" }, { "css": ".ticket-type-item" }, { "css": ".js-ticket-type" }]
+    },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "scope": "picked", "input": [{ "css": "select" }], "increment": [{ "css": "[data-qa=\"more-tickets\"]" }, { "css": "button.plus" }] },
+    { "id": "carrinho", "kind": "click", "label": "Adicionar ao carrinho", "critical": true, "target": [{ "css": "button", "text": ["adicionar ao carrinho", "comprar ingressos", "comprar"] }] }
+  ],
+  "cart": { "proceed": [{ "css": "button", "text": ["continuar"] }] }
+}

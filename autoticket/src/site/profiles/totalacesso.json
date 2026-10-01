@@ -1,0 +1,24 @@
+{
+  "id": "totalacesso",
+  "name": "Total Acesso / SPFC Ticket",
+  "version": 1,
+  "verified": false,
+  "notes": "Aceite de termos e validação de código promocional/sócio ficam com o usuário.",
+  "hosts": ["cart.totalacesso.com", "cart.spfcticket.net"],
+  "pages": {
+    "event": ["/evento", "/event", "/ingressos"],
+    "cart": ["/carrinho", "/cart"],
+    "checkout": ["/checkout", "/pagamento"],
+    "login": ["/login", "/entrar"]
+  },
+  "dom": { "error": [{ "css": ".error-form", "text": ["erro"] }] },
+  "texts": { "soldOut": ["esgotado", "indisponivel"], "actionFailed": ["nao foi possivel", "limite", "esgotado"] },
+  "steps": [
+    {
+      "id": "setor", "kind": "pick", "label": "Setor", "source": "sectors", "probe": true,
+      "items": [{ "css": ".sector-card" }, { "css": ".card-setor" }, { "css": "li.setor" }]
+    },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "optional": true, "timeoutMs": 3000, "input": [{ "css": "select" }], "increment": [{ "css": "button.plus" }] },
+    { "id": "reservar", "kind": "click", "label": "Reservar", "critical": true, "target": [{ "css": "button", "text": ["reservar"] }] }
+  ]
+}

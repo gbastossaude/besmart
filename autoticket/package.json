@@ -1,0 +1,35 @@
+{
+  "name": "autoticket",
+  "version": "7.0.0",
+  "private": true,
+  "description": "Extensão Chrome (MV3) de compra assistida de ingressos — estável, monitorável e respeitando as regras do site.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:e2e": "node scripts/build.mjs --e2e",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "node scripts/build.mjs --e2e && node tests/e2e/run-e2e.mjs",
+    "package": "node scripts/build.mjs && node scripts/package.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/chrome": "^0.1.43",
+    "@types/node": "^22.19.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.39.0",
+    "globals": "^16.5.0",
+    "jsdom": "^27.0.0",
+    "playwright-core": "~1.56.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^4.0.0"
+  }
+}

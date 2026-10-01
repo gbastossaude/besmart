@@ -1,0 +1,39 @@
+{
+  "id": "ticketmaster-br",
+  "name": "Ticketmaster Brasil",
+  "version": 1,
+  "verified": false,
+  "notes": "Herdado da versão 6. Removidos: fuga automática de /blocked, saída da fila virtual e preenchimento de portadores com dados fictícios.",
+  "hosts": ["ticketmaster.com.br"],
+  "pages": {
+    "event": ["/event/"],
+    "cart": ["/cart"],
+    "checkout": ["/checkout", "/purchase"],
+    "login": ["/login", "auth."],
+    "blocked": ["/blocked"]
+  },
+  "dom": {
+    "checkout": [{ "css": "#checkout-actions" }, { "css": "#purchase_detail" }],
+    "queue": [{ "css": ".queue_content" }],
+    "loading": [{ "css": ".loader_process" }]
+  },
+  "texts": {
+    "soldOut": ["esgotado"],
+    "actionFailed": ["nao ha ingressos", "limite", "esgotado", "tente novamente"]
+  },
+  "steps": [
+    { "id": "ingressos", "kind": "click", "label": "Botão INGRESSOS", "optional": true, "timeoutMs": 3000, "target": [{ "css": "button", "text": ["ingressos"] }] },
+    {
+      "id": "setor", "kind": "pick", "label": "Setor", "source": "sectors", "probe": true,
+      "items": [{ "css": "#pickerContent > div > div", "textIn": "h5" }, { "css": "#pickerContent [role=\"button\"]" }],
+      "textIn": "h5"
+    },
+    {
+      "id": "valor", "kind": "pick", "label": "Tipo de ingresso", "source": "categories",
+      "items": [{ "css": "#rates > div", "textIn": "h5" }, { "css": "#pickerContent #rates > div" }],
+      "textIn": "h5"
+    },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "scope": "picked", "input": [{ "css": "#quantitySelector" }, { "css": "select" }], "increment": [{ "css": ".plus" }] },
+    { "id": "continuar", "kind": "click", "label": "Continuar (reservar)", "critical": true, "target": [{ "css": "button, .btn", "text": ["continuar", "comprar"] }] }
+  ]
+}

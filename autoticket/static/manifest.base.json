@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "AutoTicket",
+  "short_name": "AutoTicket",
+  "description": "Compra assistida de ingressos: monitora disponibilidade, seleciona e chama você para CAPTCHA, fila e pagamento.",
+  "minimum_chrome_version": "120",
+  "action": {
+    "default_title": "AutoTicket",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "permissions": ["storage", "alarms", "scripting", "notifications"],
+  "host_permissions": [],
+  "optional_host_permissions": ["https://*/*"],
+  "content_scripts": [],
+  "web_accessible_resources": [],
+  "commands": {
+    "emergency-stop": {
+      "suggested_key": { "default": "Ctrl+Shift+Y", "mac": "Command+Shift+Y" },
+      "description": "Parada de emergência do robô"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+  }
+}

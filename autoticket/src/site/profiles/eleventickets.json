@@ -1,0 +1,44 @@
+{
+  "id": "eleventickets",
+  "name": "Eleven Tickets / Superingresso (Vasco, Libertadores, Criciúma, Flamengo)",
+  "version": 1,
+  "verified": false,
+  "notes": "Herdado da versão 6 (modo interface). A versão antiga usava chamadas diretas à API e resolução de Proof-of-Work, removidas por contornar proteções do site.",
+  "hosts": ["eleventickets.com", "superingresso.com.br"],
+  "pages": {
+    "eventList": ["#!/eventos", "re:#!/?$", "re:#!/home"],
+    "event": ["#!/apresentacao", "/apresentacao"],
+    "cart": ["#!/carrinho"],
+    "checkout": ["#!/pagamento", "#!/checkout", "#!/finalizar"],
+    "login": ["#!/login", "#!/entrar", "#!/cadastro"]
+  },
+  "dom": {
+    "loading": [{ "css": ".ngProgressLite-spinner" }],
+    "cartFilled": [{ "css": "span[ng-show=\"qtdReserva > 0\"]" }, { "css": "#shoppingCartItems.active", "visible": false }],
+    "error": [{ "css": ".dialog-show-error", "text": ["erro interno", "tente novamente"] }]
+  },
+  "texts": {
+    "soldOut": ["esgotado", "indisponivel"],
+    "challenge": ["confirm you are human"],
+    "actionFailed": ["nao foi possivel", "limite", "esgotado", "indisponivel"],
+    "cartConfirmed": ["adicionado ao carrinho", "reserva realizada"]
+  },
+  "eventList": {
+    "items": [{ "css": ".container-cards-principais .mdl-card" }, { "css": "md-card" }],
+    "clickTarget": "a, button"
+  },
+  "steps": [
+    { "id": "comprar", "kind": "click", "label": "Abrir compra", "optional": true, "timeoutMs": 2000, "target": [{ "css": "button", "text": ["comprar"] }] },
+    {
+      "id": "setor", "kind": "pick", "label": "Setor", "source": "sectors", "probe": true,
+      "items": [{ "css": "[ng-repeat*=\"bloco\"]" }, { "css": ".lista-blocos md-list-item" }, { "css": "md-list-item" }]
+    },
+    {
+      "id": "produto", "kind": "pick", "label": "Tipo de ingresso", "source": "categories", "optional": true,
+      "items": [{ "css": "div[produto=\"produto\"]" }, { "css": "#card-produtos .mdl-card" }, { "css": "#card-produtos md-list-item" }]
+    },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "optional": true, "timeoutMs": 3000, "input": [{ "css": "select[ng-model*=\"qtd\"]" }, { "css": "#card-produtos select" }] },
+    { "id": "adicionar", "kind": "click", "label": "Adicionar ao carrinho", "critical": true, "target": [{ "css": "button", "text": ["adicionar ao carrinho"] }] }
+  ],
+  "cart": { "proceed": [{ "css": "button", "text": ["finalizar compra", "continuar para pagamento", "ir para pagamento"] }] }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "wgl",
+  "name": "Plataforma WGL (Palmeiras, Galo, Santos)",
+  "version": 1,
+  "verified": false,
+  "notes": "A versão 6 usava requisições diretas (GetWglAutoSeats / FastSeatsSubmit) — removidas. Este perfil opera somente pela interface e precisa ser validado em modo Simulação.",
+  "hosts": ["ingressospalmeiras.com.br", "ingressos.galonaveia.com.br", "ingressos.santosfc.com.br"],
+  "pages": {
+    "eventList": ["re:\\.br/?$", "/Events", "/Home"],
+    "event": ["/Stadium", "/Event/", "eventId="],
+    "cart": ["/Cart", "/ShoppingCart"],
+    "checkout": ["/Checkout", "/Payment"],
+    "login": ["/Account/Login", "/Login"]
+  },
+  "texts": { "soldOut": ["esgotado", "indisponivel"], "actionFailed": ["nao ha assentos", "limite", "esgotado"] },
+  "eventList": { "items": [{ "css": ".event-card" }, { "css": ".card-evento" }], "clickTarget": "a" },
+  "steps": [
+    {
+      "id": "setor", "kind": "pick", "label": "Setor", "source": "sectors", "probe": true,
+      "items": [{ "css": "[data-sector-id]" }, { "css": ".sector-item" }, { "css": ".sector" }]
+    },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "optional": true, "timeoutMs": 3000, "input": [{ "css": "#numOfSeats" }, { "css": "select[name*=\"quantity\" i]" }] },
+    { "id": "adicionar", "kind": "click", "label": "Adicionar ao carrinho", "critical": true, "target": [{ "css": "button, a.btn", "text": ["adicionar ao carrinho", "reservar", "comprar"] }] }
+  ]
+}

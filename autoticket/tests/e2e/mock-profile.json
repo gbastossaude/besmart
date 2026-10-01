@@ -1,0 +1,31 @@
+{
+  "id": "e2e-mock",
+  "name": "Site simulado (E2E)",
+  "version": 1,
+  "verified": true,
+  "hosts": ["127.0.0.1"],
+  "pages": {
+    "eventList": ["/events"],
+    "event": ["/event"],
+    "cart": ["/cart"],
+    "checkout": ["/checkout"],
+    "login": ["/login"]
+  },
+  "dom": {
+    "cartFilled": [{ "css": "#cart-count[data-count]:not([data-count='0'])" }],
+    "loading": [{ "css": "#page-loading" }]
+  },
+  "texts": {
+    "soldOut": ["esgotado"],
+    "actionFailed": ["limite atingido"],
+    "cartConfirmed": ["adicionado ao carrinho"]
+  },
+  "eventList": { "items": [{ "css": ".event-card" }], "clickTarget": "a" },
+  "steps": [
+    { "id": "abrir", "kind": "click", "label": "Abrir ingressos", "optional": true, "timeoutMs": 2000, "target": [{ "css": "button#open-picker" }] },
+    { "id": "setor", "kind": "pick", "label": "Setor", "source": "sectors", "probe": true, "items": [{ "css": ".sector", "textIn": ".name" }], "textIn": ".name" },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "input": [{ "css": "select#qty" }] },
+    { "id": "adicionar", "kind": "click", "label": "Adicionar ao carrinho", "critical": true, "target": [{ "css": "button#add", "text": ["adicionar"] }] }
+  ],
+  "cart": { "proceed": [{ "css": "a#go-checkout" }] }
+}

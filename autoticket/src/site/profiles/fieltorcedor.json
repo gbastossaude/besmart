@@ -1,0 +1,32 @@
+{
+  "id": "fieltorcedor",
+  "name": "Fiel Torcedor (Corinthians)",
+  "version": 1,
+  "verified": false,
+  "hosts": ["fieltorcedor.com.br"],
+  "pages": {
+    "eventList": ["re:/ingressos/?$", "/jogos"],
+    "event": ["/ingressos/jogo", "/setor", "/mapa"],
+    "cart": ["/carrinho", "/reserva"],
+    "checkout": ["/pagamento", "/checkout"],
+    "login": ["/login", "/entrar"]
+  },
+  "dom": { "event": [{ "css": ".mapa-arena" }] },
+  "texts": {
+    "soldOut": ["esgotado", "indisponivel", "sem lugares"],
+    "error": ["verificacao csrf falhou"],
+    "actionFailed": ["lugar disponivel para o setor", "nao ha lugar", "limite"]
+  },
+  "eventList": {
+    "items": [{ "css": ".card-jogo" }, { "css": ".jogo" }, { "css": ".proximos-jogos li" }],
+    "clickTarget": "a"
+  },
+  "steps": [
+    {
+      "id": "setor", "kind": "pick", "label": "Setor", "source": "sectors", "probe": true,
+      "items": [{ "css": "[data-setor]" }, { "css": ".setor" }, { "css": ".lista-setores li" }]
+    },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "optional": true, "timeoutMs": 3000, "input": [{ "css": "select[name*=\"quant\" i]" }] },
+    { "id": "prosseguir", "kind": "click", "label": "Prosseguir", "critical": true, "target": [{ "css": "button", "text": ["prosseguir", "reservar"] }] }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "id": "futebolcard",
+  "name": "FutebolCard / Ingressos Flamengo",
+  "version": 1,
+  "verified": false,
+  "notes": "Herdado da versão 6. Criação automática de contas com dados gerados e scripts que substituíam o reCAPTCHA do site foram removidos.",
+  "hosts": ["futebolcard.com", "ingressos.flamengo.com.br"],
+  "pages": {
+    "eventList": ["re:\\.(com|br)/?$", "/jogos", "/eventos"],
+    "event": ["/buy/sector", "/sector", "/match/", "/jogo/"],
+    "cart": ["shopping-cart", "/cart"],
+    "checkout": ["policy?cart", "/checkout", "/payment"],
+    "login": ["/login", "/register", "/auth"]
+  },
+  "dom": {
+    "event": [{ "css": ".match_page-map" }],
+    "cartFilled": [{ "css": ".cart-count:not(:empty)", "text": ["1", "2", "3", "4", "5", "6"] }]
+  },
+  "texts": {
+    "soldOut": ["esgotado", "indisponivel"],
+    "challenge": ["verificacao de seguranca", "confirm you are human"],
+    "blocked": ["acesso bloqueado"],
+    "error": ["erro interno"],
+    "actionFailed": ["nao foi possivel", "limite de ingressos", "esgotado"]
+  },
+  "eventList": {
+    "items": [{ "css": ".match_card" }, { "css": ".card-jogo" }, { "css": ".events-list .card" }],
+    "clickTarget": "a"
+  },
+  "steps": [
+    { "id": "abrir-mapa", "kind": "click", "label": "Comprar (mapa)", "optional": true, "timeoutMs": 2000, "target": [{ "css": ".match_page-map button", "text": ["comprar"] }] },
+    {
+      "id": "setor", "kind": "pick", "label": "Setor", "source": "sectors", "probe": true,
+      "items": [{ "css": "[data-sector-id]" }, { "css": ".sector-item" }, { "css": ".sectors_list li" }, { "css": ".match_page-sectors .card" }]
+    },
+    {
+      "id": "categoria", "kind": "pick", "label": "Tipo de ingresso", "source": "categories", "optional": true,
+      "items": [{ "css": "[data-ticket-type]" }, { "css": ".ticket-type" }, { "css": ".tickets_list li" }]
+    },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "optional": true, "timeoutMs": 3000, "input": [{ "css": "select[name*=\"quant\" i]" }, { "css": "input[name*=\"quant\" i]" }], "increment": [{ "css": "button.plus" }, { "css": "button[aria-label*=\"mais\" i]" }] },
+    { "id": "adicionar", "kind": "click", "label": "Adicionar ao carrinho", "critical": true, "target": [{ "css": "button, .fc-btn", "text": ["adicionar ao carrinho", "comprar", "reservar"] }] }
+  ],
+  "cart": { "proceed": [{ "css": "a, button", "text": ["finalizar compra", "continuar", "ir para pagamento"] }] }
+}

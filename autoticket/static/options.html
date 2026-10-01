@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>AutoTicket — Configurações</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body { max-width: 980px; margin: 0 auto; padding: 16px 20px 60px; }
+      nav { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin: 12px 0; flex-wrap: wrap; }
+      nav button { border-radius: 8px 8px 0 0; border-bottom: none; }
+      nav button[aria-selected='true'] { background: var(--accent); color: #fff; border-color: var(--accent); }
+      section[hidden] { display: none; }
+      .actions { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+      .profile { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+      #profile-json { min-height: 340px; }
+      .check { display: flex; gap: 8px; align-items: center; font-weight: 400; }
+      .check input { width: auto; }
+    </style>
+  </head>
+  <body>
+    <header class="row">
+      <h1>AutoTicket <small class="muted" id="version"></small></h1>
+      <span id="saved" class="muted" style="text-align:right"></span>
+    </header>
+    <div class="card"><strong>Compra assistida, dentro das regras do site.</strong>
+      O robô nunca resolve CAPTCHA, não fura fila virtual, não cria contas, não usa dados de terceiros e nunca efetua o pagamento:
+      nesses pontos ele pausa e chama você.</div>
+    <nav role="tablist">
+      <button role="tab" data-tab="config" aria-selected="true">Configuração</button>
+      <button role="tab" data-tab="profiles">Perfis de site</button>
+      <button role="tab" data-tab="logs">Logs</button>
+      <button role="tab" data-tab="diag">Diagnóstico</button>
+    </nav>
+
+    <section id="tab-config">
+      <form id="form">
+        <h2>Alvo</h2>
+        <div class="grid2">
+          <div>
+            <label>Palavras-chave do evento <span class="hint">(uma por linha; usadas na lista de eventos)</span></label>
+            <textarea name="eventKeywords" rows="3" placeholder="Flamengo x Vasco"></textarea>
+          </div>
+          <div>
+            <label>URL do evento <span class="hint">(opcional, https://)</span></label>
+            <input name="eventUrl" type="url" placeholder="https://..." />
+            <label>Quantidade <span class="hint">(1–10; nunca excede o limite do site)</span></label>
+            <input name="quantity" type="number" min="1" max="10" />
+          </div>
+          <div>
+            <label>Setores em ordem de prioridade <span class="hint">(um por linha; vazio = qualquer)</span></label>
+            <textarea name="sectors" rows="5" placeholder="Norte&#10;Leste Inferior&#10;*"></textarea>
+          </div>
+          <div>
+            <label>Tipos/categorias de ingresso <span class="hint">(um por linha; vazio = qualquer)</span></label>
+            <textarea name="categories" rows="5" placeholder="Inteira"></textarea>
+          </div>
+        </div>
+
+        <h2>Comportamento</h2>
+        <div class="grid2">
+          <div>
+            <label>Modo de execução</label>
+            <select name="mode">
+              <option value="live">Real — executa as ações</option>
+              <option value="dry-run">Simulação — tudo, exceto “adicionar ao carrinho”/checkout</option>
+            </select>
+            <label>Intervalo de atualização enquanto indisponível (s) <span class="hint">(mín. 10)</span></label>
+            <input name="refreshIntervalSec" type="number" min="10" max="3600" />
+            <label>Máximo de recarregamentos por hora</label>
+            <input name="maxReloadsPerHour" type="number" min="1" max="240" />
+            <label>Tentativas de seleção antes de pausar</label>
+            <input name="maxSelectionAttempts" type="number" min="1" max="50" />
+          </div>
+          <div>
+            <label>Início agendado <span class="hint">(opcional — recarrega a página no horário)</span></label>
+            <input name="scheduledStart" type="datetime-local" />
+            <label>Espera máxima por você (CAPTCHA/fila/login), minutos <span class="hint">(0 = sem limite)</span></label>
+            <input name="userWaitLimitMin" type="number" min="0" max="1440" />
+            <label class="check"><input name="autoProceedToCheckout" type="checkbox" /> Ao chegar no carrinho, abrir o checkout (o pagamento é sempre seu)</label>
+            <label class="check"><input name="notifications" type="checkbox" /> Notificações do sistema</label>
+            <label class="check"><input name="sound" type="checkbox" /> Alerta sonoro</label>
+          </div>
+        </div>
+
+        <h2>Timeouts e recuperação</h2>
+        <div class="grid2">
+          <div>
+            <label>Carregamento de página (ms)</label><input name="pageLoadMs" type="number" />
+            <label>Localização de elemento (ms)</label><input name="elementMs" type="number" />
+            <label>Seleção completa (ms)</label><input name="selectionMs" type="number" />
+            <label>Confirmação do carrinho (ms)</label><input name="cartConfirmMs" type="number" />
+            <label>Abertura do checkout (ms)</label><input name="checkoutMs" type="number" />
+          </div>
+          <div>
+            <label>Sem sinal da aba antes do watchdog agir (ms)</label><input name="heartbeatStaleMs" type="number" />
+            <label>Máximo de tentativas de recuperação</label><input name="maxAttempts" type="number" />
+            <label>Atraso inicial do backoff (ms)</label><input name="baseDelayMs" type="number" />
+            <label>Atraso máximo do backoff (ms)</label><input name="maxDelayMs" type="number" />
+            <label>Fator do backoff</label><input name="factor" type="number" step="0.5" />
+          </div>
+        </div>
+
+        <h2>Logs</h2>
+        <div class="grid2">
+          <label class="check"><input name="debug" type="checkbox" /> Modo DEBUG (mais detalhes; use só para diagnóstico)</label>
+          <div><label>Máximo de linhas guardadas</label><input name="maxEntries" type="number" /></div>
+        </div>
+        <div id="form-errors" class="errors"></div>
+        <div class="actions">
+          <button type="submit" class="primary">Salvar</button>
+          <button type="button" id="restore">Restaurar padrões</button>
+          <button type="button" id="export-settings">Exportar configuração</button>
+          <button type="button" id="import-btn">Importar configuração</button>
+          <input type="file" id="import-settings" accept="application/json" hidden />
+        </div>
+      </form>
+    </section>
+
+    <section id="tab-profiles" hidden>
+      <p class="muted">Perfis descrevem como reconhecer as páginas e quais elementos usar em cada site. Perfis marcados como
+        <span class="badge warn">não verificado</span> vieram da versão anterior e devem ser validados com
+        <em>Testar seletores</em> e o modo <em>Simulação</em> antes de uma compra real.</p>
+      <div id="profile-list"></div>
+      <h2>Editor de perfil (JSON)</h2>
+      <div class="row">
+        <select id="profile-template"></select>
+        <button type="button" id="load-template">Carregar no editor</button>
+      </div>
+      <textarea id="profile-json" spellcheck="false"></textarea>
+      <div id="profile-errors" class="errors"></div>
+      <div class="actions">
+        <button type="button" id="validate-profile">Validar</button>
+        <button type="button" id="save-profile" class="primary">Salvar como perfil personalizado</button>
+        <button type="button" id="export-profiles">Exportar todos</button>
+      </div>
+    </section>
+
+    <section id="tab-logs" hidden>
+      <div class="row">
+        <select id="log-level">
+          <option value="DEBUG">DEBUG e acima</option>
+          <option value="INFO" selected>INFO e acima</option>
+          <option value="WARNING">WARNING e acima</option>
+          <option value="ERROR">Somente ERROR</option>
+        </select>
+        <input id="log-search" placeholder="Filtrar texto…" />
+        <button type="button" id="export-logs">Exportar</button>
+        <button type="button" id="clear-logs">Limpar</button>
+      </div>
+      <div id="log-list" class="logs card" style="max-height: 70vh"></div>
+    </section>
+
+    <section id="tab-diag" hidden>
+      <div class="actions">
+        <button type="button" id="diag-refresh">Atualizar</button>
+        <button type="button" id="diag-reset">Redefinir estado</button>
+      </div>
+      <h3>Métricas</h3>
+      <table id="metrics"></table>
+      <h3>Ações críticas (idempotência)</h3>
+      <table id="ledger"></table>
+      <h3>Estado bruto</h3>
+      <pre id="raw"></pre>
+    </section>
+    <script src="options.js"></script>
+  </body>
+</html>

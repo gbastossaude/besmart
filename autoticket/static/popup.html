@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>AutoTicket</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body { width: 380px; padding: 12px; }
+      header { display: flex; justify-content: space-between; align-items: center; }
+      .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0 6px; }
+      #emergency { width: 100%; padding: 9px; font-size: 14px; letter-spacing: .5px; }
+      .reason { margin-top: 6px; }
+      .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 0 6px; margin-top: 6px; }
+      .tools button { text-align: left; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>AutoTicket</h1>
+      <span id="pill" class="pill st-stopped">PARADO</span>
+    </header>
+    <div class="card">
+      <div><strong id="phase">Ocioso</strong> <small id="profile"></small></div>
+      <div id="reason" class="reason muted"></div>
+    </div>
+
+    <div class="controls">
+      <button id="start" class="primary" title="Iniciar o robô na aba atual">Iniciar</button>
+      <button id="pause" title="Pausar (pode retomar depois)">Pausar</button>
+      <button id="resume" title="Retomar a execução pausada">Retomar</button>
+      <button id="stop" title="Encerrar a execução">Parar</button>
+    </div>
+    <button id="emergency" class="danger" title="Ctrl+Shift+Y">PARADA DE EMERGÊNCIA</button>
+    <div class="tools">
+      <button id="check" class="link">Verificar checklist</button>
+      <button id="test" class="link">Testar seletores</button>
+      <button id="reset" class="link">Redefinir estado</button>
+      <button id="options" class="link">Configurações</button>
+    </div>
+
+    <div id="checks-box" class="card" hidden>
+      <strong>Checklist</strong>
+      <ul id="checks" class="checks"></ul>
+      <div id="start-msg" class="muted"></div>
+    </div>
+    <div id="test-box" class="card" hidden>
+      <strong>Teste de seletores</strong> <small>(nada é clicado; elementos destacados por 8s)</small>
+      <div id="test-out"></div>
+    </div>
+
+    <h2>Diagnóstico</h2>
+    <dl class="kv card">
+      <dt>Estado</dt><dd id="d-phase">—</dd>
+      <dt>Última ação</dt><dd id="d-action">—</dd>
+      <dt>Tempo de execução</dt><dd id="d-elapsed">—</dd>
+      <dt>Tentativas / retries</dt><dd id="d-retries">—</dd>
+      <dt>Recarregamentos (1h)</dt><dd id="d-reloads">—</dd>
+      <dt>Próxima atualização</dt><dd id="d-refresh">—</dd>
+      <dt>Último erro</dt><dd id="d-error">—</dd>
+      <dt>Página atual</dt><dd id="d-page">—</dd>
+      <dt>Última atividade</dt><dd id="d-activity">—</dd>
+    </dl>
+
+    <h2>Logs recentes</h2>
+    <div id="logs" class="logs card"></div>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "id": "bilheteriadigital",
+  "name": "Bilheteria Digital",
+  "version": 1,
+  "verified": false,
+  "notes": "A versão 6 automatizava a finalização do pagamento (PIX, termos, 'Finalizar compra'). Agora o robô para no checkout e o pagamento é sempre feito pelo usuário.",
+  "hosts": ["bilheteriadigital.com"],
+  "pages": {
+    "event": ["/evento", "/e/"],
+    "cart": ["/carrinho"],
+    "checkout": ["/checkout"],
+    "login": ["/login", "/entrar"]
+  },
+  "texts": { "soldOut": ["esgotado", "indisponivel"], "actionFailed": ["nao foi possivel", "limite", "esgotado"] },
+  "steps": [
+    {
+      "id": "ingresso", "kind": "pick", "label": "Tipo de ingresso", "source": "categories", "probe": true,
+      "items": [{ "css": ".ticket-item" }, { "css": ".ingresso" }, { "css": ".tipo-ingresso" }]
+    },
+    { "id": "quantidade", "kind": "quantity", "label": "Quantidade", "scope": "picked", "input": [{ "css": "select" }], "increment": [{ "css": ".btn-plus" }, { "css": "button.plus" }, { "css": "button[aria-label*=\"mais\" i]" }] },
+    { "id": "comprar", "kind": "click", "label": "Comprar", "critical": true, "target": [{ "css": "button", "text": ["comprar", "continuar", "adicionar"] }] }
+  ]
+}
