@@ -22,6 +22,8 @@ M = json.load(open(os.path.join(HERE, 'marks.json')))
 SYM_D = M['symbol']['d']                     # viewBox 0 0 92 114
 WORD = M['wordmark']['svg'].replace('<path ', '<path fill="currentColor" ')
 HANDLE = '@erbeprotecao'
+# Amarelo ERBE: toque (ação, numerais, indicador). Nunca área, nunca sobre o verde.
+AMARELO = '#EDCB6B'
 
 ICONS = {  # Lucide v0.468 (ISC)
     'shield-check': '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
@@ -78,7 +80,7 @@ def anatomy(h):
     for (y, x), (n, name, sub) in zip(anchors, labels):
         X, Y = x * s + 18, y * s
         out.append(f'<line x1="{X:.1f}" y1="{Y:.1f}" x2="{lx - 24:.1f}" y2="{Y:.1f}" stroke="#7BBB9F" stroke-width="2"/>')
-        out.append(f'<circle cx="{X:.1f}" cy="{Y:.1f}" r="6" fill="#7BBB9F"/>')
+        out.append(f'<circle cx="{X:.1f}" cy="{Y:.1f}" r="7" fill="{AMARELO}"/>')
         out.append(f'<text x="{lx}" y="{Y - 8:.1f}" class="an-n">{n}</text>')
         out.append(f'<text x="{lx + 56}" y="{Y - 8:.1f}" class="an-t">{name}</text>')
         out.append(f'<text x="{lx + 56}" y="{Y + 34:.1f}" class="an-s">{sub}</text>')
@@ -87,9 +89,9 @@ def anatomy(h):
 
 
 THEMES = {
-    'onix': dict(bg='#0B0F0E', fg='#F6F5F0', muted='#9AA29E', accent='#7BBB9F', line='rgba(246,245,240,.14)', sym_base='#2A3230', sym_word='#F6F5F0', chip='rgba(123,187,159,.12)'),
-    'papel': dict(bg='#F6F5F0', fg='#0B0F0E', muted='#5E6863', accent='#17664D', line='rgba(11,15,14,.12)', sym_base='#E6E8E3', sym_word='#0B0F0E', chip='#E2EFE8'),
-    'verde': dict(bg='#17664D', fg='#F6F5F0', muted='#C9E2D6', accent='#F6F5F0', line='rgba(246,245,240,.22)', sym_base='rgba(246,245,240,.22)', sym_word='#F6F5F0', chip='rgba(246,245,240,.12)'),
+    'onix': dict(bg='#0B0F0E', fg='#F6F5F0', muted='#9AA29E', accent='#7BBB9F', line='rgba(246,245,240,.14)', sym_base='#2A3230', sym_word='#F6F5F0', chip='rgba(123,187,159,.12)', gold=AMARELO),
+    'papel': dict(bg='#F6F5F0', fg='#0B0F0E', muted='#5E6863', accent='#17664D', line='rgba(11,15,14,.12)', sym_base='#E6E8E3', sym_word='#0B0F0E', chip='#E2EFE8', gold=None),
+    'verde': dict(bg='#17664D', fg='#F6F5F0', muted='#C9E2D6', accent='#F6F5F0', line='rgba(246,245,240,.22)', sym_base='rgba(246,245,240,.22)', sym_word='#F6F5F0', chip='rgba(246,245,240,.12)', gold=None),
 }
 
 PILLARS = [
@@ -118,7 +120,8 @@ def header(t, total=None, page=None):
 
 
 def footer(t, page, total, left='A gente estuda antes de indicar.'):
-    dots = ''.join(f'<i style="background:{t["fg"] if i == page else t["line"]}"></i>' for i in range(1, total + 1))
+    on = t.get('gold') or t['fg']
+    dots = ''.join(f'<i style="background:{on if i == page else t["line"]}"></i>' for i in range(1, total + 1))
     arrow = icon('arrow-right', 34, 1.6) if page < total else ''
     return (f'<div class="ft" style="border-color:{t["line"]};color:{t["muted"]}"><span>{left}</span>'
             f'<span class="pager"><span class="dots">{dots}</span><span style="color:{t["fg"]}">{arrow}</span></span></div>')
@@ -149,7 +152,7 @@ def card_pillar(p, page):
       {header(t)}
       <div class="pill-head">
         <span class="chip" style="background:{t["chip"]};color:{t["accent"]}">{icon(p["icon"], 64, 1.5)}</span>
-        <p class="eyebrow" style="color:{t["accent"]}">Pilar {p["n"]}<br><span style="color:{t["fg"]}">{p["name"]}</span></p>
+        <p class="eyebrow" style="color:{t.get("gold") or t["accent"]}">Pilar {p["n"]}<br><span style="color:{t["fg"]}">{p["name"]}</span></p>
         <span class="arm-mark">{sym_arm(150, p["arm"], t["sym_base"], t["accent"])}</span>
       </div>
       <h2 class="title" style="font-size:88px;margin-top:48px;max-width:880px">{p["title"]}</h2>
@@ -172,7 +175,7 @@ def card_cta():
       <h2 class="title" style="font-size:76px;margin-top:20px">Um interlocutor<br>para os três.</h2>
       <p class="body" style="color:{t["muted"]};margin-top:24px;font-size:31px">Você recebe um estudo escrito, com as opções lado a lado, o que cada uma cobre e o motivo da recomendação. E continua falando com a gente depois de assinar.</p>
       <ul class="rows">{rows}</ul>
-      <div class="cta-row"><span class="cta" style="background:#0B0F0E;color:#F6F5F0">Fale com a ERBE {icon("arrow-right", 34, 1.8)}</span><span style="color:{t["muted"]}">Link na bio</span></div>
+      <div class="cta-row"><span class="cta" style="background:{AMARELO};color:#0B0F0E">Fale com a ERBE {icon("arrow-right", 34, 1.8)}</span><span style="color:{t["muted"]}">Link na bio</span></div>
       {footer(t, 5, 5, 'Proteger o que continua.')}'''
     return frame('feed-05-fale-com-a-erbe', 1080, 1350, 'papel', inner, 'Carrossel 5/5 · chamada')
 
@@ -181,7 +184,7 @@ def story(p):
     t = THEMES[p['theme']]
     items = ' <span class="sep">·</span> '.join(f'<span class="nw">{i}</span>' for i in p['items'])
     note = f'<p class="note" style="color:{t["muted"]};margin-top:32px;font-size:24px">{p["note"]}</p>' if p.get('note') else ''
-    cta_bg, cta_fg = ('#0B0F0E', '#F6F5F0') if p['theme'] == 'papel' else ('#F6F5F0', '#0B0F0E')
+    cta_bg, cta_fg = ('#F6F5F0', '#0B0F0E') if p['theme'] == 'verde' else (AMARELO, '#0B0F0E')
     inner = f'''
       <div class="story">
         {header(t)}
@@ -215,7 +218,7 @@ def banner():
         <div class="bn-text">
           {lockup(64, 26, "#F6F5F0")}
           <p class="bn-claim">Proteger o que continua.</p>
-          <p class="bn-lines" style="color:{t["accent"]}">Seguros&nbsp;&nbsp;·&nbsp;&nbsp;Plano de Saúde&nbsp;&nbsp;·&nbsp;&nbsp;Consórcio</p>
+          <p class="bn-lines" style="color:{t["accent"]}">Seguros<b>·</b>Plano de Saúde<b>·</b>Consórcio</p>
         </div>
       </div>'''
     return frame('banner-linkedin', 1584, 396, 'onix', inner, 'Banner LinkedIn')
@@ -256,7 +259,7 @@ figcaption { color: #C2C8C5; font: 500 14px Inter; }
 .cta-row { display: flex; align-items: center; gap: 32px; margin-top: auto; padding-top: 32px; font: 500 28px Inter; }
 .cta-row + .ft { margin-top: 48px; }
 .cta { display: inline-flex; align-items: center; gap: 18px; padding: 26px 40px; border-radius: 20px; font: 600 32px Inter; }
-.an-n { font: 600 30px Sora; fill: #7BBB9F; }
+.an-n { font: 600 30px Sora; fill: #EDCB6B; }
 .an-t { font: 600 46px Sora; fill: #F6F5F0; letter-spacing: -.02em; }
 .an-s { font: 400 28px Inter; fill: #9AA29E; }
 .story { display: flex; flex-direction: column; height: 100%; padding-top: 60px; }
@@ -272,6 +275,7 @@ figcaption { color: #C2C8C5; font: 500 14px Inter; }
 .bn-text { position: relative; display: grid; justify-items: end; gap: 22px; text-align: right; }
 .bn-claim { font: 600 64px Sora; letter-spacing: -.03em; color: #F6F5F0; margin-top: 18px; }
 .bn-lines { font: 600 22px Inter; letter-spacing: .2em; text-transform: uppercase; }
+.bn-lines b { color: #EDCB6B; margin: 0 18px; }
 '''
 
 

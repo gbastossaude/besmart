@@ -42,9 +42,14 @@
   --verde-100: #D7EBE2;
   --verde-50:  #EEF6F2;
 
-  /* Champanhe · herança do filete dourado. Uso raro: documentos e detalhes
-     institucionais sobre fundo escuro. Nunca como texto sobre fundo claro. */
-  --champanhe: #C6AE7A;       /* rgb(198 174 122) */
+  /* Amarelo ERBE · herança das colunas douradas do primeiro logo.
+     É TOQUE, nunca área (≤ 3 % da peça): botão de ação, numeral, filete.
+     Sobre Ônix, ou como preenchimento com texto Ônix sobre fundo claro.
+     Nunca sobre o Verde ERBE nem colado a uma área verde grande
+     (verde + amarelo em área vira bandeira). */
+  --amarelo:      #EDCB6B;    /* rgb(237 203 107) · 12,3:1 sobre Ônix */
+  --amarelo-soft: #FBF3DA;    /* rgb(251 243 218) · fundo de destaque claro */
+  --amarelo-ink:  #6E5310;    /* rgb(110 83 16)   · texto sobre amarelo-soft */
 
   /* Estados de interface */
   --sucesso-600: var(--verde-600);
@@ -74,6 +79,9 @@
   --color-brand-press:   var(--verde-800);
   --color-brand-soft:    var(--verde-50);
   --color-brand-on-dark: var(--verde-300);
+  --color-accent:        var(--amarelo);
+  --color-accent-soft:   var(--amarelo-soft);
+  --color-accent-ink:    var(--amarelo-ink);
 
   --color-border:        var(--grafite-200);
   --color-border-strong: var(--grafite-300);

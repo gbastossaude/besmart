@@ -216,6 +216,9 @@ img, svg { display: block; max-width: 100%; }
 .btn--primary:active { background: var(--color-brand-press); }
 .btn--dark { background: var(--onix); color: var(--papel); }
 .btn--dark:hover { background: var(--grafite-800); }
+.btn--accent { background: var(--color-accent); color: var(--onix); }
+.btn--accent:hover { background: #F3D782; }
+.btn--accent:active { background: #E3BE55; }
 .btn--secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border-strong); }
 .btn--secondary:hover { border-color: var(--grafite-500); background: var(--grafite-50); }
 .btn--ghost { color: var(--color-text-muted); }
@@ -259,6 +262,7 @@ img, svg { display: block; max-width: 100%; }
   font-size: 0.6875rem; font-weight: var(--weight-semibold); letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.2;
 }
 .tag--brand { background: var(--color-brand-soft); color: var(--verde-700); }
+.tag--accent { background: var(--color-accent-soft); color: var(--color-accent-ink); }
 .tag--inverse { background: rgb(246 245 240 / 0.08); color: var(--grafite-300); }
 
 /* Callouts -------------------------------------------------------------- */
@@ -270,6 +274,9 @@ img, svg { display: block; max-width: 100%; }
 }
 .callout__title { margin-bottom: var(--space-1); color: var(--color-text); }
 .callout p { color: var(--color-text-muted); font-size: var(--text-sm); }
+.callout--accent { background: var(--color-accent-soft); border-color: #F3E3B0; }
+.callout--accent .icon-chip { background: var(--color-accent); color: var(--onix); }
+.callout--accent .callout__title { color: var(--color-accent-ink); }
 .callout--brand { background: var(--color-brand-soft); border-color: var(--verde-100); }
 .callout--brand .icon-chip { background: var(--branco); }
 
@@ -404,7 +411,7 @@ img, svg { display: block; max-width: 100%; }
 .hero__mark { aspect-ratio: 92 / 114; position: absolute; z-index: -1; right: -6%; top: 50%; width: min(46%, 26rem); transform: translateY(-50%); color: var(--grafite-900); }
 .hero__lines { position: absolute; z-index: -1; left: 0; right: 0; bottom: 0; height: 40%; opacity: 0.5; }
 .hero__eyebrow { display: inline-flex; align-items: center; gap: var(--space-3); color: var(--verde-300); }
-.hero__eyebrow::before { content: ""; width: 1.5rem; height: 2px; border-radius: 2px; background: currentColor; }
+.hero__eyebrow::before { content: ""; width: 1.5rem; height: 2px; border-radius: 2px; background: var(--color-accent); }
 .hero__title { margin-top: var(--space-5); max-width: 14ch; font-size: var(--text-display); line-height: 1.04; letter-spacing: var(--tracking-display); color: var(--papel); }
 .hero__title span { color: var(--verde-300); }
 .hero__lead { margin-top: var(--space-5); max-width: 34rem; color: var(--grafite-400); font-size: var(--text-lg); }
@@ -581,9 +588,9 @@ img, svg { display: block; max-width: 100%; }
 .mock-doc__cover .brand-lockup__symbol { height: 7cqi; color: var(--papel); }
 .mock-doc__cover .brand-lockup__word { height: 3cqi; color: var(--papel); }
 .mock-doc__cover .brand-lockup__desc { font-size: 1.9cqi; color: var(--verde-300); }
-.mock-doc__kicker { margin-top: auto; font-size: 2.4cqi; letter-spacing: 0.18em; text-transform: uppercase; color: var(--champanhe); font-weight: var(--weight-semibold); }
+.mock-doc__kicker { margin-top: auto; font-size: 2.4cqi; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-accent); font-weight: var(--weight-semibold); }
 .mock-doc__title { margin-top: 2.5cqi; font-family: var(--font-display); font-size: 6.4cqi; line-height: 1.1; letter-spacing: -0.02em; font-weight: var(--weight-semibold); }
-.mock-doc__rule { margin-top: 4cqi; height: 1px; background: var(--champanhe); width: 22%; }
+.mock-doc__rule { margin-top: 4cqi; height: 1px; background: var(--color-accent); width: 22%; }
 .mock-doc__body { padding: 6cqi 8cqi; display: grid; gap: 2.4cqi; align-content: start; }
 .mock-doc__body i { display: block; height: 1.6cqi; border-radius: 1px; background: var(--grafite-100); }
 .mock-doc__body i:nth-child(3n) { width: 70%; }

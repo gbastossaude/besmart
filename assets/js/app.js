@@ -167,7 +167,7 @@ const views = {
                 <h1 class="hero__title">Estudar antes de <span>indicar.</span></h1>
                 <p class="hero__lead">A estrutura técnica completa de vendas para PME, Adesão e Individual — com os scripts e a cadência que sustentam cada recomendação.</p>
                 <div class="hero__actions">
-                    <button type="button" class="btn btn--inverse btn--lg" onclick="navigateTo('qualificacao-avancada')">Começar pela qualificação ${icon('arrow-right', 'icon--sm')}</button>
+                    <button type="button" class="btn btn--accent btn--lg" onclick="navigateTo('qualificacao-avancada')">Começar pela qualificação ${icon('arrow-right', 'icon--sm')}</button>
                     <button type="button" class="btn btn--outline-inverse btn--lg" onclick="navigateTo('pme-contratacao')">Ver modalidades</button>
                 </div>
                 <dl class="hero__meta">
@@ -219,8 +219,8 @@ const views = {
     followup: () => `
         <div class="page fade-in">
             ${pageHeader({ eyebrow: 'Comercial', title: 'Estratégia Follow-up', lead: 'Onde o dinheiro realmente é feito: uma cadência de cinco contatos, do envio da proposta à despedida elegante.' })}
-            <div class="callout callout--brand">
-                <span class="icon-chip">${icon('info')}</span>
+            <div class="callout callout--accent">
+                <span class="icon-chip">${icon('lightbulb')}</span>
                 <div><p class="callout__title overline">Regra de ouro</p><p>“O dinheiro está no acompanhamento, não no primeiro contato. Quem não faz follow-up organizado, vive de sorte.”</p></div>
             </div>
             <ol class="timeline mt-8">
@@ -270,7 +270,7 @@ const views = {
                         </button></li>`).join('')}
                 </ol>
                 <aside class="card card--inverse">
-                    <p class="overline" style="color:var(--verde-300)">Dicas</p>
+                    <p class="overline" style="color:var(--amarelo)">Dicas</p>
                     <ul class="tips">
                         <li>${icon('check', 'icon--sm')}Não faça tudo de uma vez.</li>
                         <li>${icon('check', 'icon--sm')}Conduza como conversa natural.</li>
@@ -366,12 +366,12 @@ function renderBrand() {
 
         <!-- Cores -->
         <section class="section">
-            <div class="section__head"><div><p class="overline">Sistema de cores</p><h2 class="section__title mt-2">Ônix e Verde ERBE</h2><p class="section__lead">Preto esverdeado como base, um jade profundo como assinatura. Longe do verde de banco, de farmácia e de operadora de saúde.</p></div></div>
+            <div class="section__head"><div><p class="overline">Sistema de cores</p><h2 class="section__title mt-2">Ônix, Verde ERBE e um toque de amarelo</h2><p class="section__lead">Preto esverdeado como base, um jade profundo como assinatura e o amarelo das colunas do primeiro logo como acento. Longe do verde de banco, de farmácia e de operadora de saúde.</p></div></div>
             <div class="grid grid--4">
                 ${swatch('Ônix', '#0B0F0E', '11 15 14', 'Primária · base institucional', 'var(--onix)', 'var(--papel)')}
                 ${swatch('Verde ERBE', '#17664D', '23 102 77', 'Secundária · ação e marca', 'var(--verde-600)', 'var(--branco)')}
                 ${swatch('Jade', '#7BBB9F', '123 187 159', 'Destaque · somente sobre escuro', 'var(--verde-300)', 'var(--onix)')}
-                ${swatch('Champanhe', '#C6AE7A', '198 174 122', 'Herança · detalhe em documentos', 'var(--champanhe)', 'var(--onix)')}
+                ${swatch('Amarelo ERBE', '#EDCB6B', '237 203 107', 'Toque · ação e numerais, nunca área', 'var(--amarelo)', 'var(--onix)')}
                 ${swatch('Papel', '#F6F5F0', '246 245 240', 'Fundo claro institucional', 'var(--papel)', 'var(--onix)', 'border-bottom:1px solid var(--color-border)')}
                 ${swatch('Grafite 900', '#1A201E', '26 32 30', 'Superfície escura elevada', 'var(--grafite-900)', 'var(--papel)')}
                 ${swatch('Grafite 600', '#5E6863', '94 104 99', 'Texto secundário', 'var(--grafite-600)', 'var(--branco)')}
@@ -383,8 +383,8 @@ function renderBrand() {
                 <p class="overline">Escala Grafite</p>
                 <div class="ramp">${grafite.map((s, i) => `<span style="background:var(--grafite-${s});color:${i < 5 ? 'var(--grafite-900)' : 'var(--grafite-50)'}">${s}</span>`).join('')}</div>
                 <p class="overline">Proporção em peça</p>
-                <div class="proportion"><span style="flex:55;background:var(--onix)"></span><span style="flex:30;background:var(--papel);border:1px solid var(--color-border)"></span><span style="flex:12;background:var(--verde-600)"></span><span style="flex:3;background:var(--champanhe)"></span></div>
-                <p class="text-sm text-muted">55 Ônix/grafite · 30 Papel/branco · 12 Verde ERBE · 3 destaque. Estados: sucesso <code>#17664D</code> · aviso <code>#8A5A0B</code> · erro <code>#B42318</code> · informação <code>#2D5A73</code>.</p>
+                <div class="proportion"><span style="flex:55;background:var(--onix)"></span><span style="flex:30;background:var(--papel);border:1px solid var(--color-border)"></span><span style="flex:12;background:var(--verde-600)"></span><span style="flex:3;background:var(--amarelo)"></span></div>
+                <p class="text-sm text-muted">55 Ônix/grafite · 30 Papel/branco · 12 Verde ERBE · até 3 Amarelo ERBE — em toque, nunca em área, e nunca sobre o verde (vira bandeira). Estados: sucesso <code>#17664D</code> · aviso <code>#8A5A0B</code> · erro <code>#B42318</code> · informação <code>#2D5A73</code>.</p>
             </div>
         </section>
 
@@ -419,11 +419,11 @@ function renderBrand() {
             <div class="grid grid--2">
                 <div class="card stack-4">
                     <p class="overline">Botões</p>
-                    <div class="flex-wrap-gap"><button type="button" class="btn btn--primary">Solicitar estudo</button><button type="button" class="btn btn--dark">Falar com a ERBE</button><button type="button" class="btn btn--secondary">Ver comparação</button><button type="button" class="btn btn--ghost">Cancelar</button></div>
+                    <div class="flex-wrap-gap"><button type="button" class="btn btn--primary">Solicitar estudo</button><button type="button" class="btn btn--dark">Falar com a ERBE</button><button type="button" class="btn btn--accent">Fale com a ERBE</button><button type="button" class="btn btn--secondary">Ver comparação</button><button type="button" class="btn btn--ghost">Cancelar</button></div>
                     <div class="flex-wrap-gap"><button type="button" class="btn btn--primary btn--sm">Pequeno</button><button type="button" class="btn btn--secondary btn--sm">${icon('download', 'icon--sm')} Baixar PDF</button><button type="button" class="btn btn--secondary btn--icon" aria-label="Copiar">${icon('copy', 'icon--sm')}</button><button type="button" class="btn btn--primary" disabled>Desativado</button></div>
-                    <div class="flex-wrap-gap" style="background:var(--onix);padding:1rem;border-radius:var(--radius-md)"><button type="button" class="btn btn--inverse">Sobre escuro</button><button type="button" class="btn btn--outline-inverse">Secundário</button></div>
+                    <div class="flex-wrap-gap" style="background:var(--onix);padding:1rem;border-radius:var(--radius-md)"><button type="button" class="btn btn--accent">Ação principal</button><button type="button" class="btn btn--inverse">Sobre escuro</button><button type="button" class="btn btn--outline-inverse">Secundário</button></div>
                     <p class="overline mt-6">Tags e avisos</p>
-                    <div class="flex-wrap-gap"><span class="tag tag--brand">${icon('check', 'icon--xs')} Recomendado</span><span class="tag">Carência 30 dias</span><span class="tag">Coparticipação</span></div>
+                    <div class="flex-wrap-gap"><span class="tag tag--brand">${icon('check', 'icon--xs')} Recomendado</span><span class="tag tag--accent">Novo</span><span class="tag">Carência 30 dias</span><span class="tag">Coparticipação</span></div>
                     <div class="callout"><span class="icon-chip icon-chip--line">${icon('info')}</span><div><p class="callout__title overline">O que não está coberto</p><p>Toda proposta ERBE traz uma página dizendo o que fica de fora. Assinada junto.</p></div></div>
                 </div>
                 <form class="card form" id="demo-form" novalidate>

@@ -19,7 +19,7 @@ Comercial (`index.html#marca`) mostra tudo aplicado.
 
 **Preservado:** o nome, o descritor "Proteção e Patrimônio", o escudo, a ideia de
 três pilares com o central diferente, o preto como base, o verde como assinatura, a
-Sora e o dourado (agora champanhe, só em detalhe).
+Sora e o amarelo das colunas (agora Amarelo ERBE, só como toque).
 
 ## 2. Símbolo — escudo-E
 
@@ -62,13 +62,18 @@ Todo SVG tem PNG equivalente em `logo/png/` (1600 px, fundo transparente).
 | Ônix | `#0B0F0E` | 11 15 14 | Primária · base institucional |
 | Verde ERBE | `#17664D` | 23 102 77 | Secundária · marca e ação (6,9:1 sobre branco) |
 | Jade | `#7BBB9F` | 123 187 159 | Destaque · só sobre escuro (8,7:1 sobre Ônix) |
-| Champanhe | `#C6AE7A` | 198 174 122 | Herança · detalhe em documentos, nunca texto em fundo claro |
+| Amarelo ERBE | `#EDCB6B` | 237 203 107 | Toque · botão de ação, numerais e filetes (12,3:1 sobre Ônix). Nunca área, nunca sobre o verde |
+| Amarelo suave / tinta | `#FBF3DA` / `#6E5310` | 251 243 218 / 110 83 16 | Fundo e texto de destaque claro ("Regra de ouro", tag "Novo") |
 | Papel | `#F6F5F0` | 246 245 240 | Fundo claro institucional |
 | Grafite 900 / 600 / 50 | `#1A201E` / `#5E6863` / `#F4F4F1` | — | Superfície escura · texto secundário · fundo de interface |
 | Sucesso / Aviso / Erro / Info | `#17664D` / `#8A5A0B` / `#B42318` / `#2D5A73` | — | Estados de interface |
 
 Escalas completas (Verde 50–950, Grafite 50–950) em `assets/css/tokens.css`.
-Proporção por peça: 55 Ônix/grafite · 30 Papel · 12 Verde · 3 destaque.
+Proporção por peça: 55 Ônix/grafite · 30 Papel · 12 Verde · até 3 Amarelo.
+
+**Regra do amarelo:** é toque, nunca área. Usar sobre Ônix, ou como preenchimento
+(com texto Ônix) sobre fundo claro. Nunca sobre o Verde ERBE nem ao lado de uma área
+verde grande — verde + amarelo em área vira bandeira.
 
 ## 6. Tipografia
 
