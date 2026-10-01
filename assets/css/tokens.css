@@ -1,0 +1,177 @@
+/* ==========================================================================
+   ERBE · Design Tokens  (v2)
+   Fonte única de verdade para cor, tipografia, espaço, forma, sombra e
+   movimento. Nenhum componente deve usar valores fora desta lista.
+   ========================================================================== */
+
+:root {
+  /* ---------------------------------------------------------------- Cor
+     Primitivas — nunca usar direto em componente; usar os papéis abaixo. */
+
+  /* Ônix · primária institucional (preto esverdeado, nunca #000) */
+  --onix: #0B0F0E;            /* rgb(11 15 14)  */
+
+  /* Grafite · neutros com leve viés verde (harmonizam com o Verde ERBE) */
+  --grafite-950: #121715;     /* rgb(18 23 21)  */
+  --grafite-900: #1A201E;     /* rgb(26 32 30)  */
+  --grafite-850: #1F2624;     /* rgb(31 38 36)  */
+  --grafite-800: #2A3230;     /* rgb(42 50 48)  */
+  --grafite-700: #434B48;     /* rgb(67 75 72)  */
+  --grafite-600: #5E6863;     /* rgb(94 104 99) */
+  --grafite-500: #77807C;     /* rgb(119 128 124) */
+  --grafite-400: #9AA29E;     /* rgb(154 162 158) */
+  --grafite-300: #C2C8C5;     /* rgb(194 200 197) */
+  --grafite-200: #DFE2DE;     /* rgb(223 226 222) */
+  --grafite-100: #ECEDE9;     /* rgb(236 237 233) */
+  --grafite-50:  #F4F4F1;     /* rgb(244 244 241) */
+
+  /* Papel · fundo claro institucional (quente, de documento) */
+  --papel: #F6F5F0;           /* rgb(246 245 240) */
+  --branco: #FFFFFF;
+
+  /* Verde ERBE · secundária. Jade profundo: nem banco, nem farmácia. */
+  --verde-950: #07211A;
+  --verde-900: #0C3328;
+  --verde-800: #0F4234;
+  --verde-700: #12523F;
+  --verde-600: #17664D;       /* Verde ERBE · rgb(23 102 77) · 6.9:1 sobre branco */
+  --verde-500: #227C5E;
+  --verde-400: #46997A;
+  --verde-300: #7BBB9F;       /* Jade · destaque sobre fundo escuro · 8.7:1 sobre Ônix */
+  --verde-200: #ADD6C4;
+  --verde-100: #D7EBE2;
+  --verde-50:  #EEF6F2;
+
+  /* Champanhe · herança do filete dourado. Uso raro: documentos e detalhes
+     institucionais sobre fundo escuro. Nunca como texto sobre fundo claro. */
+  --champanhe: #C6AE7A;       /* rgb(198 174 122) */
+
+  /* Estados de interface */
+  --sucesso-600: var(--verde-600);
+  --sucesso-50:  var(--verde-50);
+  --aviso-700:  #8A5A0B;      /* rgb(138 90 11) */
+  --aviso-50:   #FBF4E4;
+  --erro-600:   #B42318;      /* rgb(180 35 24) */
+  --erro-50:    #FDEDEB;
+  --info-700:   #2D5A73;      /* rgb(45 90 115) */
+  --info-50:    #EBF2F6;
+
+  /* ---------------------------------------------------------------- Papéis */
+  --color-bg:            var(--grafite-50);
+  --color-surface:       var(--branco);
+  --color-surface-muted: var(--papel);
+  --color-surface-inverse: var(--onix);
+  --color-surface-inverse-raised: var(--grafite-900);
+
+  --color-text:          var(--onix);
+  --color-text-muted:    var(--grafite-600);
+  --color-text-subtle:   var(--grafite-500);
+  --color-text-inverse:  var(--papel);
+  --color-text-inverse-muted: var(--grafite-400);
+
+  --color-brand:         var(--verde-600);
+  --color-brand-hover:   var(--verde-700);
+  --color-brand-press:   var(--verde-800);
+  --color-brand-soft:    var(--verde-50);
+  --color-brand-on-dark: var(--verde-300);
+
+  --color-border:        var(--grafite-200);
+  --color-border-strong: var(--grafite-300);
+  --color-border-inverse: rgb(246 245 240 / 0.08);
+  --color-focus:         var(--verde-500);
+
+  /* ---------------------------------------------------------------- Tipografia
+     Sora  → marca, títulos e números de destaque (geometria, presença).
+     Inter → texto e interface (legibilidade em qualquer tamanho). */
+  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-text: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Escala fluida (mobile → desktop) */
+  --text-display: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);   /* 36 → 56 */
+  --text-h1:      clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);   /* 28 → 40 */
+  --text-h2:      clamp(1.375rem, 1.2rem + 0.7vw, 1.75rem); /* 22 → 28 */
+  --text-h3:      1.25rem;   /* 20 */
+  --text-h4:      1.0625rem; /* 17 */
+  --text-lg:      1.125rem;  /* 18 */
+  --text-md:      1rem;      /* 16 */
+  --text-sm:      0.875rem;  /* 14 */
+  --text-xs:      0.8125rem; /* 13 */
+  --text-overline: 0.6875rem;/* 11 */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  --tracking-display: -0.025em;
+  --tracking-heading: -0.015em;
+  --tracking-overline: 0.16em;
+  --tracking-brand: 0.14em;
+
+  /* ---------------------------------------------------------------- Espaço (base 4) */
+  --space-1: 0.25rem;  /* 4  */
+  --space-2: 0.5rem;   /* 8  */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-5: 1.25rem;  /* 20 */
+  --space-6: 1.5rem;   /* 24 */
+  --space-8: 2rem;     /* 32 */
+  --space-10: 2.5rem;  /* 40 */
+  --space-12: 3rem;    /* 48 */
+  --space-16: 4rem;    /* 64 */
+  --space-20: 5rem;    /* 80 */
+  --space-24: 6rem;    /* 96 */
+
+  /* Grid */
+  --container-max: 72rem;    /* 1152 */
+  --container-narrow: 52rem; /* 832  — leitura */
+  --gutter: clamp(1rem, 0.6rem + 1.8vw, 2.5rem);
+  --grid-gap: clamp(1rem, 0.8rem + 0.8vw, 1.5rem);
+  --sidebar-w: 18rem;
+  --topbar-h: 4rem;
+  --bottomnav-h: 4.25rem;
+
+  /* ---------------------------------------------------------------- Forma
+     Raios contidos: solidez, não "bolha" de template. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  --border-1: 1px solid var(--color-border);
+
+  /* ---------------------------------------------------------------- Sombra
+     Quase ausente. Profundidade vem de contraste de superfície, não de efeito. */
+  --shadow-xs: 0 1px 2px rgb(11 15 14 / 0.05);
+  --shadow-sm: 0 1px 2px rgb(11 15 14 / 0.04), 0 2px 8px -2px rgb(11 15 14 / 0.06);
+  --shadow-md: 0 2px 4px rgb(11 15 14 / 0.04), 0 12px 32px -12px rgb(11 15 14 / 0.16);
+  --shadow-lg: 0 24px 64px -16px rgb(11 15 14 / 0.35);
+  --ring: 0 0 0 3px rgb(34 124 94 / 0.28);
+
+  /* ---------------------------------------------------------------- Movimento */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+
+  /* ---------------------------------------------------------------- Camadas */
+  --z-sticky: 20;
+  --z-drawer: 50;
+  --z-overlay: 45;
+  --z-toast: 80;
+
+  /* ---------------------------------------------------------------- Breakpoints
+     (referência — CSS custom properties não funcionam em @media)
+     sm  640px   · celular grande / tablet retrato
+     md  768px   · tablet
+     lg  1024px  · notebook — sidebar fixa, sem barra inferior
+     xl  1280px  · desktop */
+}
