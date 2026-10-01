@@ -582,6 +582,7 @@ function abrirContrato(id){
   <div class="m-foot">
     ${podeExcluirCarteira()?`<button class="btn ghost danger left" data-act="excluirContrato" data-id="${esc(c.id)}">Excluir</button>`:""}
     <button class="btn ghost" data-act="abrirCliente" data-id="${esc(c.clienteId)}">Ver cliente</button>
+    ${S.mePapel==="gestor"?`<button class="btn ghost" data-act="historico" data-tabela="contratos" data-id="${esc(c.id)}" data-titulo="${esc(c.clienteNome)}">Histórico</button>`:""}
     <button class="btn" data-act="fechar">Fechar</button>
     <button class="btn primary" data-act="editarContrato" data-id="${esc(c.id)}">Editar</button>
   </div>`, true);

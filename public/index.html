@@ -66,6 +66,15 @@
     </header>
     <div id="view"></div>
   </main>
+  <!-- Celular: atalhos fixos embaixo; "Mais" abre o menu completo. -->
+  <nav id="tabbar" aria-label="Atalhos">
+    <button type="button" data-view="dashboard"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h4v8H3zM10 3h4v18h-4zM17 9h4v12h-4z"/></svg><span>Painel</span></button>
+    <button type="button" data-view="leads"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8v7l-4 2v-9z"/></svg><span>Leads</span><i class="nav-badge" data-badge="leads" hidden></i></button>
+    <button type="button" data-view="tarefas"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18v16H3zM3 9h18M8 3v4M16 3v4"/></svg><span>Agenda</span><i class="nav-badge" data-badge="tarefas" hidden></i></button>
+    <button type="button" data-view="clientes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20a6 6 0 0 1 12 0M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 20a5 5 0 0 0-3-4.6"/></svg><span>Clientes</span></button>
+    <button type="button" data-act="abrirMenu" aria-label="Abrir o menu completo" aria-controls="rail" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Mais</span></button>
+  </nav>
+  <div id="railScrim" data-act="fecharMenu" aria-hidden="true"></div>
 </div>
 <div id="scrim"><div id="modal" role="dialog" aria-modal="true"></div></div>
 <div id="scrim2"><div id="dialogo" role="dialog" aria-modal="true"></div></div>
@@ -84,6 +93,7 @@
 <script src="assets/js/datas-ans.js"></script>
 <script src="assets/js/sessao.js"></script>
 <script src="assets/js/ui/modal.js"></script>
+<script src="assets/js/ui/layout.js"></script>
 <script src="assets/js/views/painel.js"></script>
 <script src="assets/js/views/leads.js"></script>
 <script src="assets/js/views/clientes.js"></script>
@@ -97,6 +107,7 @@
 <script src="assets/js/views/relatorios.js"></script>
 <script src="assets/js/views/operadoras.js"></script>
 <script src="assets/js/views/atividade.js"></script>
+<script src="assets/js/views/auditoria.js"></script>
 <script src="assets/js/views/config.js"></script>
 <script src="assets/js/forms/lead.js"></script>
 <script src="assets/js/forms/contrato.js"></script>

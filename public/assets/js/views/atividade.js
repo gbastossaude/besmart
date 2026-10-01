@@ -29,6 +29,7 @@ function viewAtividade(){
 
   const ativosHoje = new Set(ATIV.filter(r=>(r.quando||"").slice(0,10)===hojeStr).map(r=>r.quem)).size;
   return `
+  ${painelLixeira()}
   <div class="stat-row" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
     <div class="stat"><div class="k">Movimentações hoje</div>
       <div class="v">${ATIV.filter(r=>(r.quando||"").slice(0,10)===hojeStr).length}</div>

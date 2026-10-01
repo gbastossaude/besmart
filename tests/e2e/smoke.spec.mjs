@@ -34,3 +34,16 @@ test("usuário pendente vê a tela de espera", async ({ page, abrir }) => {
   await abrir("pendente");
   await expect(page.locator("#pageTitle")).toHaveText("Aguardando liberação");
 });
+
+test("painel filtra por período e corretor", async ({ page, abrir }) => {
+  await abrir("gestor");
+  await expect(page.locator(".stat.hero .k")).toContainText("este mês");
+  await page.selectOption("#pnPer", "t12");
+  await expect(page.locator(".stat.hero .k")).toContainText("últimos 12 meses");
+  await expect(page.locator(".stat.hero .d")).toContainText("3 contratos");
+  await page.selectOption("#pnCor", { label: "Ana Corretora" });
+  await expect(page.locator(".stat.hero .d")).toContainText("1 contrato ");
+  await page.click('[data-act="limparPainel"]');
+  await expect(page.locator(".stat.hero .k")).toContainText("este mês");
+  expect(page.__erros).toEqual([]);
+});

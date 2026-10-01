@@ -79,6 +79,7 @@ async function remover(col, id, evento){
     }
   }catch(e){ falhaEscrita(e, col); await desfazerNaTela(col, id); return false; }
   if(antigo) registrarAtividade(col, antigo, evento||"Excluiu", false);
+  LIXEIRA = null;   // a lixeira do gestor relê na próxima vez
   return true;
 }
 /** O servidor recusou: a tela volta a mostrar o que está gravado de verdade. */

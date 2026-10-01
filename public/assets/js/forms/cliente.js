@@ -209,6 +209,7 @@ function abrirCliente(id){
   </div>
   <div class="m-foot">
     ${podeExcluirCarteira()?`<button class="btn ghost danger left" data-act="excluirCliente" data-id="${esc(c.id)}">Excluir cliente</button>`:""}
+    ${S.mePapel==="gestor"?`<button class="btn ghost" data-act="historico" data-tabela="clientes" data-id="${esc(c.id)}" data-titulo="${esc(c.nome)}">Histórico</button>`:""}
     <button class="btn" data-act="fechar">Fechar</button>
     <button class="btn primary" data-act="editarCliente" data-id="${esc(c.id)}">Editar dados</button></div>`, true);
 }

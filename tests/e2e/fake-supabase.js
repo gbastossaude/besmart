@@ -116,6 +116,12 @@
           if (!podeEscrever(t, linha, i >= 0 ? "update" : "insert")) return { data: null, error: erroRls(t) };
           linha.atualizado_em = new Date().toISOString();
           const velho = i >= 0 ? tab[i] : null;
+          if (velho && velho.dados && linha.dados && t !== "atividade") {
+            const mud = {};
+            for (const k of new Set([...Object.keys(velho.dados), ...Object.keys(linha.dados)]))
+              if (!/^atualizado/.test(k) && JSON.stringify(velho.dados[k]) !== JSON.stringify(linha.dados[k])) mud[k] = { de: velho.dados[k] ?? null, para: linha.dados[k] ?? null };
+            if (Object.keys(mud).length) db.tables.auditoria.push({ id: db.tables.auditoria.length + 1, quando: new Date().toISOString(), quem: uid(), tabela: t, registro_id: linha.id, acao: "UPDATE", mudancas: mud });
+          }
           if (i >= 0) tab[i] = Object.assign({}, tab[i], linha); else tab.push(linha);
           feitos.push(linha);
           emitir(t, velho ? "UPDATE" : "INSERT", linha, velho ? { id: velho.id } : null);
@@ -140,7 +146,10 @@
         const permitidos = alvo.filter(r => podeEscrever(t, r, "delete"));
         alvo.length = 0; alvo.push(...permitidos);
         db.tables[t] = tab.filter(r => !alvo.includes(r));
-        for (const r of alvo) emitir(t, "DELETE", null, { id: r.id });
+        for (const r of alvo) {
+          emitir(t, "DELETE", null, { id: r.id });
+          if (r.dados) db.tables.auditoria.push({ id: db.tables.auditoria.length + 1, quando: new Date().toISOString(), quem: uid(), tabela: t, registro_id: r.id, acao: "DELETE", registro: Object.assign({}, r.dados, { _dono: r.dono }) });
+        }
         return { data: this.retorna ? alvo.map(r => ({ id: r.id })) : null, error: null };
       }
       return { data: null, error: { message: "modo desconhecido" } };

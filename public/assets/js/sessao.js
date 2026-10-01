@@ -341,8 +341,8 @@ function ir(view, filtros){
 function atualizarBadges(){
   const pend = S.tarefas.filter(t=>t.status!=="feita" && noEscopo(t)).length;
   const atras = parcelas().filter(p=>p.vencida && noEscopo(p,"corretor")).length;
-  const set=(id,n,alerta)=>{ const el=document.querySelector(`[data-badge="${id}"]`); if(!el) return;
-    el.hidden = !n; el.textContent=n; el.classList.toggle("urgente", !!alerta); };
+  const set=(id,n,alerta)=>document.querySelectorAll(`[data-badge="${id}"]`).forEach(el=>{
+    el.hidden = !n; el.textContent=n; el.classList.toggle("urgente", !!alerta); });
   set("tarefas", pend, S.tarefas.some(t=>t.status!=="feita" && t.vence<hoje() && noEscopo(t)));
   set("comissoes", atras, atras>0);
   set("leads", S.leads.filter(l=>!["ganho","perdido"].includes(l.etapa) && noEscopo(l)).length, false);
@@ -399,6 +399,7 @@ function render(){
   }
   if(typeof mostrarLembrete==="function") mostrarLembrete();
   if(typeof pintarMarca==="function") pintarMarca();
+  cardificarTabelas(v);
   document.body.classList.toggle("sem-com", ocultaComissao());
 }
 /** Quem ainda não foi liberado pelo gestor não vê a operação. */

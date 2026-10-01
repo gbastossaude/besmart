@@ -12,7 +12,7 @@ export default defineConfig({
     launchOptions: process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /mobile\.spec\.mjs/ },
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile\.spec\.mjs/ }
   ],
   webServer: { command: `node scripts/serve.mjs ${PORTA}`, port: PORTA, reuseExistingServer: !process.env.CI }

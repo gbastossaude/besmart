@@ -47,15 +47,41 @@ function pedirTexto(titulo, rotulo, inicial, rotuloBotao, tipo){
       setTimeout(()=>campo.focus(), 40);
     });
 }
+let focoAntesDoModal = null;
 function abrirModal(html, wide){
+  if(!$("#scrim").classList.contains("open")) focoAntesDoModal = document.activeElement;
   $("#modal").className = wide?"wide":"";
   $("#modal").innerHTML = html;
   $("#scrim").classList.add("open");
+  document.body.classList.add("com-modal");
+  const titulo = $("#modal").querySelector("h2");
+  if(titulo){ titulo.id = "modalTitulo"; $("#modal").setAttribute("aria-labelledby", "modalTitulo"); }
+  cardificarTabelas($("#modal"));
   const f = $("#modal").querySelector("input,select,textarea");
   // foco imediato: com atraso, quem já começou a digitar tinha o texto jogado em outro campo
   if(f) f.focus({ preventScroll:true });
 }
-function fecharModal(){ $("#scrim").classList.remove("open"); $("#modal").innerHTML=""; }
+function fecharModal(){
+  const estavaAberto = $("#scrim").classList.contains("open");
+  $("#scrim").classList.remove("open"); $("#modal").innerHTML="";
+  document.body.classList.remove("com-modal");
+  // o foco volta para onde a pessoa estava (teclado e leitor de tela não se perdem)
+  if(estavaAberto && focoAntesDoModal && document.contains(focoAntesDoModal)) try{ focoAntesDoModal.focus({ preventScroll:true }); }catch(e){ /* ignora */ }
+  focoAntesDoModal = null;
+}
+/* Tab não sai do modal/diálogo aberto: o foco circula dentro dele. */
+document.addEventListener("keydown", e=>{
+  if(e.key!=="Tab") return;
+  const caixa = $("#scrim2").classList.contains("open") ? $("#dialogo") : $("#scrim").classList.contains("open") ? $("#modal") : null;
+  if(!caixa) return;
+  const foco = [...caixa.querySelectorAll('button:not([disabled]),[href],input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(el=>el.offsetParent!==null);
+  if(!foco.length) return;
+  const primeiro = foco[0], ultimo = foco[foco.length-1];
+  if(!caixa.contains(document.activeElement)){ e.preventDefault(); primeiro.focus(); }
+  else if(e.shiftKey && document.activeElement===primeiro){ e.preventDefault(); ultimo.focus(); }
+  else if(!e.shiftKey && document.activeElement===ultimo){ e.preventDefault(); primeiro.focus(); }
+});
 $("#scrim").addEventListener("mousedown", e=>{ if(e.target.id==="scrim") fecharModal(); });
 document.addEventListener("keydown", e=>{
   if(e.key!=="Escape") return;

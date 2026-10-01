@@ -25,6 +25,12 @@ async function executarAcao(a, id, el, e){
   switch(a){
     case "recarregarPagina": location.reload(); break;
     case "abrirBusca": abrirBusca(); break;
+    case "abrirMenu": abrirMenu(); break;
+    case "limparPainel": S.painel = null; render(); break;
+    case "historico": await abrirHistorico(el.dataset.tabela, id, el.dataset.titulo); break;
+    case "restaurarExcluido": await restaurarExcluido(id); break;
+    case "transferirCarteira": await transferirCarteira(id); break;
+    case "fecharMenu": fecharMenu(); break;
     case "instalarApp": await instalarApp(); break;
     case "fechar": fecharModal(); break;
     case "fecharBanner": limparBanner(); break;
@@ -655,6 +661,12 @@ document.addEventListener("change", e=>{
   }
   const el = e.target.closest("[data-act]"); if(!el) return;
   if(el.dataset.act==="filtro"){ S.filtros[el.dataset.k] = el.value; zerarPaginas(); render(); }
+  if(el.dataset.act==="filtroPainel"){
+    const F = periodoPainel();
+    if(el.dataset.k==="periodo" && el.value==="custom"){ S.painel.de = F.de; S.painel.ate = F.ate; }
+    S.painel[el.dataset.k] = el.value;
+    render();
+  }
   if(el.dataset.act==="recalcBase") rebaseParcelas();
   if(el.dataset.act==="recalcSplit") atualizarDerivados();
   if(el.dataset.act==="recalcVidas") renderEditor();

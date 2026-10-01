@@ -59,6 +59,7 @@ function viewEquipe(){
           split ${pct(u.splitPct??50)}${u.papel==="corretor"&&u.verTudo?' · <span class="chip info">vê a corretora</span>':""}${u.manual?' · <span class="hint">não acessa o sistema</span>':""}</div></div>
         ${gestor?`<div class="right">
           <button class="btn sm" data-act="editarUsuario" data-id="${esc(u.id)}">Editar</button>
+          ${!u.manual && u.id!==S.uid?`<button class="btn sm ghost" data-act="transferirCarteira" data-id="${esc(u.id)}" title="Passar a carteira desta pessoa para outra">Transferir carteira</button>`:""}
           ${u.manual?`<button class="btn sm ghost danger" data-act="excluirMembro" data-id="${esc(u.id)}" aria-label="Remover da equipe">×</button>`:""}</div>`:""}
       </div>
       <div class="chart-wrap">
