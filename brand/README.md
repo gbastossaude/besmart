@@ -76,14 +76,25 @@ Proporção por peça: 55 Ônix/grafite · 30 Papel · 12 Verde · 3 destaque.
 - **Inter** 400/500/600 (texto e interface).
 - Overline: Inter 600, 11 px, +16 %, caixa alta.
 
-## 7. Regras rápidas
+## 7. Kit social — 3 pilares
+
+Em `brand/social/` (legendas e regras de postagem em `social/LEGENDAS.md`):
+
+- **Perfil:** `avatar-onix.png` (principal) e `avatar-verde.png`; capas de destaque ERBE, Seguros, Saúde e Consórcio; `banner-linkedin.png`.
+- **Carrossel 4:5:** capa "Três pilares. Uma só casa." (o símbolo com cada braço ligado ao seu pilar) → Seguros → Plano de Saúde → Consórcio → "Um interlocutor para os três".
+- **Stories 9:16:** um por pilar, com chamada para resposta.
+
+Cada pilar tem um braço do E: **01 Seguros** (braço superior), **02 Plano de Saúde** (braço central), **03 Consórcio** (base). Nas peças, o braço do pilar aparece destacado no símbolo.
+Gerado por `source/build_social.py` + `source/render_social.js`.
+
+## 8. Regras rápidas
 
 Sim: muito respiro, texto à esquerda, uma ideia por peça, fotografia real com luz natural,
 alternar peças claras e escuras na grade.
 Não: gradientes, sombras longas, mais de duas cores por peça, ícones preenchidos,
 logo sobre foto sem área de proteção, recolorir ou distorcer o símbolo.
 
-## 8. Regenerar os ativos
+## 9. Regenerar os ativos
 
 ```bash
 pip install fonttools brotli

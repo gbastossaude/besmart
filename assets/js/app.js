@@ -548,6 +548,22 @@ function renderBrand() {
             </div>
         </section>
 
+        <!-- Kit social -->
+        <section class="section">
+            <div class="section__head"><div><p class="overline">Kit social · 3 pilares</p><h2 class="section__title mt-2">Seguros, Plano de Saúde e Consórcio</h2><p class="section__lead">Carrossel 4:5, stories, perfil, destaques e banner — prontos para postar. Legendas sugeridas em <code>brand/social/LEGENDAS.md</code>.</p></div></div>
+            <div class="social-strip">
+                ${['feed-01-capa', 'feed-02-seguros', 'feed-03-saude', 'feed-04-consorcio', 'feed-05-fale-com-a-erbe'].map((f, i) => `
+                    <a href="brand/social/${f}.png" download><img src="brand/social/${f}.png" alt="Carrossel ${i + 1} de 5" loading="lazy"></a>`).join('')}
+            </div>
+            <div class="social-strip social-strip--stories mt-6">
+                ${['story-01-seguros', 'story-02-saude', 'story-03-consorcio'].map((f) => `<a href="brand/social/${f}.png" download><img src="brand/social/${f}.png" alt="Story ${f.split('-').pop()}" loading="lazy"></a>`).join('')}
+                <div class="social-profile">
+                    <img src="brand/social/avatar-onix.png" alt="Foto de perfil ERBE">
+                    <div class="flex-wrap-gap">${['erbe', 'seguros', 'saude', 'consorcio'].map((f) => `<img src="brand/social/destaque-${f}.png" alt="Destaque ${f}">`).join('')}</div>
+                </div>
+            </div>
+        </section>
+
         <!-- Tokens -->
         <section class="section">
             <div class="section__head"><div><p class="overline">Design system</p><h2 class="section__title mt-2">Tokens</h2><p class="section__lead">Definidos uma vez em <code>assets/css/tokens.css</code>. Nenhum valor solto no código.</p></div></div>

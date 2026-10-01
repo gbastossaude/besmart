@@ -636,3 +636,12 @@ img, svg { display: block; max-width: 100%; }
   .timeline__day { width: 2.5rem; height: 2.5rem; font-size: var(--text-sm); }
   .timeline__body { padding: var(--space-4); }
 }
+
+/* Kit social na página de marca */
+.social-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(13rem, 1fr); gap: var(--space-3); overflow-x: auto; padding-bottom: var(--space-2); scrollbar-width: thin; }
+.social-strip img { width: 100%; height: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); }
+.social-strip--stories { grid-auto-columns: minmax(10rem, 1fr); }
+.social-profile { display: grid; align-content: center; justify-items: center; gap: var(--space-5); padding: var(--space-6); border-radius: var(--radius-lg); background: var(--color-surface); border: var(--border-1); }
+.social-profile > img { width: 7rem; border-radius: 50%; box-shadow: none; }
+.social-profile .flex-wrap-gap { justify-content: center; gap: var(--space-2); flex-wrap: nowrap; }
+.social-profile .flex-wrap-gap img { width: 2.5rem; height: 2.5rem; object-fit: cover; border-radius: 50%; box-shadow: none; }
