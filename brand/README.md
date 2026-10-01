@@ -92,6 +92,11 @@ Em `brand/social/` (legendas e regras de postagem em `social/LEGENDAS.md`):
 Cada pilar tem um braço do E: **01 Seguros** (braço superior), **02 Plano de Saúde** (braço central), **03 Consórcio** (base). Nas peças, o braço do pilar aparece destacado no símbolo.
 Gerado por `source/build_social.py` + `source/render_social.js`.
 
+**Conteúdos (lote 1):** `social/conteudos/` — 5 carrosséis educativos (método, coparticipação,
+carência, consórcio ou financiamento, seguro de vida), 4 frases e 4 stories interativos,
+com legendas, roteiros de Reels e calendário em `social/conteudos/PLANO.md`.
+Gerado por `source/build_content.py` + `node source/render_social.js content.html`.
+
 ## 8. Regras rápidas
 
 Sim: muito respiro, texto à esquerda, uma ideia por peça, fotografia real com luz natural,

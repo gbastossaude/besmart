@@ -550,7 +550,7 @@ function renderBrand() {
 
         <!-- Kit social -->
         <section class="section">
-            <div class="section__head"><div><p class="overline">Kit social · 3 pilares</p><h2 class="section__title mt-2">Seguros, Plano de Saúde e Consórcio</h2><p class="section__lead">Carrossel 4:5, stories, perfil, destaques e banner — prontos para postar. Legendas sugeridas em <code>brand/social/LEGENDAS.md</code>.</p></div></div>
+            <div class="section__head"><div><p class="overline">Kit social · 3 pilares</p><h2 class="section__title mt-2">Seguros, Plano de Saúde e Consórcio</h2><p class="section__lead">Carrossel 4:5, stories, perfil, destaques e banner — prontos para postar. Legendas em <code>brand/social/LEGENDAS.md</code>. Mais 35 peças educativas, roteiros de Reels e calendário em <code>brand/social/conteudos/</code>.</p></div></div>
             <div class="social-strip">
                 ${['feed-01-capa', 'feed-02-seguros', 'feed-03-saude', 'feed-04-consorcio', 'feed-05-fale-com-a-erbe'].map((f, i) => `
                     <a href="brand/social/${f}.png" download><img src="brand/social/${f}.png" alt="Carrossel ${i + 1} de 5" loading="lazy"></a>`).join('')}
