@@ -40,7 +40,7 @@
         h('div', { class: 'grow' }, h('div', { class: 'cell-main' }, dep ? `${dep.nome} faz ${dep.idade_no_aniversario} anos` : tipo === 'contato' ? c.nome : `${c.nome}${c.idade_no_aniversario ? ' faz ' + c.idade_no_aniversario + ' anos' : ''}`),
           h('div', { class: 'cell-sub' }, info))),
       h('div', { class: 'field' }, h('label', { for: 'msg_rel' }, 'Mensagem (pode editar antes de enviar)'), txt),
-      tel ? h('div', { class: 'muted', style: { fontSize: '12px' } }, 'WhatsApp: ' + fmt.phone(tel)) : h('div', { class: 'bulkbar', style: { background: 'rgba(242,169,59,.1)', borderColor: 'rgba(242,169,59,.45)', color: '#F7C77A' } }, icon('alert', 15), h('span', null, 'Cliente sem WhatsApp cadastrado — copie a mensagem e envie pelo canal que preferir.'))),
+      tel ? h('div', { class: 'muted', style: { fontSize: '12px' } }, 'WhatsApp: ' + fmt.phone(tel)) : h('div', { class: 'bulkbar', style: { background: 'rgba(242,169,59,.1)', borderColor: 'rgba(242,169,59,.45)', color: 'var(--warn-text)' } }, icon('alert', 15), h('span', null, 'Cliente sem WhatsApp cadastrado — copie a mensagem e envie pelo canal que preferir.'))),
       footer: [
         h('button', { class: 'btn ghost', onclick: async () => { try { await navigator.clipboard.writeText(txt.value); toast('Mensagem copiada'); } catch (e) { txt.select(); toast('Selecione e copie a mensagem', 'info'); } } }, icon('note', 15), 'Copiar'),
         h('button', { class: 'btn', onclick: async () => { try { await registrar('outro'); m.close(); toast('Contato registrado no histórico do cliente'); App.refreshCounts(); onDone && onDone(); } catch (e) { App.err(e); } } }, icon('check', 15), 'Já enviei'),

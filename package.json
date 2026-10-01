@@ -1,0 +1,26 @@
+{
+  "name": "besmart",
+  "version": "1.0.0",
+  "description": "Gestão comercial para corretoras de planos de saúde: leads, CRM, distribuição, follow-ups, agenda com convites, vendas, implantação integrada ao CRM, clientes, comissões com grade por produto e por corretor, metas, ranking, relatórios, presença da equipe e auditoria.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gbastossaude/besmart.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gbastossaude/besmart/issues"
+  },
+  "homepage": "https://github.com/gbastossaude/besmart#readme",
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
+  }
+}

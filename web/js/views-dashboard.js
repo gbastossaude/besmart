@@ -24,7 +24,8 @@
     return h('span', { class: good ? 'ok-t' : 'bad-t' }, (diff > 0 ? '▲ ' : '▼ ') + fmt.num(Math.abs(diff)) + (pp ? ' p.p.' : '%'), h('span', { class: 'muted' }, ' vs anterior'));
   }
   function kpi(label, value, { foot, hero, onClick, state } = {}) {
-    return h('div', { class: 'kpi' + (hero ? ' hero' : '') + (onClick ? ' link' : ''), onclick: onClick || null, role: onClick ? 'button' : null, tabindex: onClick ? '0' : null },
+    return h('div', { class: 'kpi' + (hero ? ' hero' : '') + (onClick ? ' link' : ''), onclick: onClick || null, role: onClick ? 'button' : null, tabindex: onClick ? '0' : null,
+      onkeydown: onClick ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : null },
       state ? h('span', { class: 'state', style: { background: state } }) : null,
       h('div', { class: 'kpi-label' }, label), h('div', { class: 'kpi-value' }, value), foot ? h('div', { class: 'kpi-foot' }, foot) : null);
   }
@@ -225,7 +226,7 @@
     const c = d.cards, me = dp[0] || {};
     const agenda = card('Hoje', fus.rows.length ? h('div', { class: 'list' }, fus.rows.map(f => h('div', { class: 'list-item clickable', onclick: () => f.lead_id ? App.go('/leads/' + f.lead_id) : App.go('/followups') },
       h('span', { class: 'sev', style: { '--c': f.situacao === 'atrasado' ? 'var(--bad)' : 'var(--blue)' } }),
-      h('div', { class: 'mono', style: { width: '52px', color: f.situacao === 'atrasado' ? '#FF8986' : 'var(--text-2)' } }, f.situacao === 'atrasado' ? fmt.dateShort(f.agendado_para) : fmt.time(f.agendado_para)),
+      h('div', { class: 'mono', style: { width: '52px', color: f.situacao === 'atrasado' ? 'var(--bad-text)' : 'var(--text-2)' } }, f.situacao === 'atrasado' ? fmt.dateShort(f.agendado_para) : fmt.time(f.agendado_para)),
       h('div', { class: 'li-main' }, h('div', { class: 'li-title' }, f.nome_contato || '—'), h('div', { class: 'li-sub' }, (Forms.FU_TIPOS.find(x => x.value === f.tipo) || {}).label + (f.observacao ? ' · ' + f.observacao : ''))),
       h('button', { class: 'btn xs', onclick: e => { e.stopPropagation(); Forms.concluirFollowup(f); } }, icon('check', 14), 'Concluir'))))
       : empty('Agenda do dia livre', 'Nenhum follow-up para hoje ou atrasado.'), { sub: `${fus.rows.filter(f => f.situacao === 'atrasado').length} atrasado(s)`, right: h('button', { class: 'btn sm', onclick: () => Forms.followup() }, icon('plus', 14), 'Follow-up') });

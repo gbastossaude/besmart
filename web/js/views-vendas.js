@@ -247,7 +247,7 @@
     const endereco = [c.endereco, c.numero, c.complemento, c.bairro, c.cidade && c.uf ? `${c.cidade}/${c.uf}` : c.cidade, c.cep ? 'CEP ' + c.cep : null].filter(Boolean).join(', ');
     return h('div', null,
       App.pageHead(c.nome, { crumb: { label: 'Clientes', go: '/clientes' }, eyebrow: 'Visão 360° do cliente',
-        actions: [tel ? h('a', { class: 'btn', href: U.waLink(tel), target: '_blank', rel: 'noopener', style: { color: '#5FE0A8' } }, icon('whatsapp', 16), 'WhatsApp') : null,
+        actions: [tel ? h('a', { class: 'btn', href: U.waLink(tel), target: '_blank', rel: 'noopener', style: { color: 'var(--ok-text)' } }, icon('whatsapp', 16), 'WhatsApp') : null,
           h('button', { class: 'btn', onclick: () => Forms.activity({ client_id: c.id, nome: c.nome }, { onDone: reload }) }, icon('phone', 16), 'Registrar atendimento'),
           h('button', { class: 'btn', onclick: () => Forms.followup({ client_id: c.id, nome: c.nome, responsavel_id: c.corretor_id }, { onDone: reload }) }, icon('clock', 16), 'Follow-up'),
           h('button', { class: 'btn primary', onclick: () => Forms.saleForClient(c) }, icon('plus', 16), 'Nova venda'),

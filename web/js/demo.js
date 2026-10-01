@@ -561,7 +561,11 @@
       if (old && row.codigo !== old.codigo) throw err('O código da grade não pode ser alterado', '23514');
       row.updated_at = nowISO(); if (!old) row.created_at = nowISO();
     }
-    function eventoAntes(row, old) { if (old && (row.inicio !== old.inicio || row.lembrete_min !== old.lembrete_min)) row.lembrete_enviado_em = null; }
+    function eventoAntes(row, old) {
+      if (row.link_reuniao) row.link_reuniao = String(row.link_reuniao).trim() || null;
+      if (row.link_reuniao && !/^https?:\/\/\S+$/i.test(row.link_reuniao)) throw err('O link da reunião precisa começar com https://', '23514');
+      if (old && (row.inicio !== old.inicio || row.lembrete_min !== old.lembrete_min)) row.lembrete_enviado_em = null;
+    }
     function eventoDepois(row, old) {
       if (!old) return;
       const quando = new Date(row.inicio).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });

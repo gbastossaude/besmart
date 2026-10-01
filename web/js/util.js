@@ -18,7 +18,9 @@
         else if (k === 'style' && typeof v === 'object') { for (const [sk, sv] of Object.entries(v)) { if (sv === null || sv === undefined) continue; if (sk.startsWith('--')) el.style.setProperty(sk, sv); else el.style[sk] = sv; } }
         else if (k === 'html') el.innerHTML = v;
         else if (k === 'dataset') Object.assign(el.dataset, v);
+        else if (k === 'onclick' && typeof v === 'function' && tag === 'button') el.addEventListener('click', busyHandler(el, v));
         else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+        else if (k === 'href' && tag === 'a') el.setAttribute('href', safeHref(v));
         else if (k === 'value' && (tag === 'input' || tag === 'textarea' || tag === 'select')) el.value = v;
         else if (v === true) el.setAttribute(k, '');
         else el.setAttribute(k, v);
@@ -26,6 +28,38 @@
     }
     append(el, children);
     return el;
+  }
+  /** só deixa passar links de navegação seguros (bloqueia javascript:, data:, vbscript:) */
+  function safeHref(v) {
+    const s = String(v ?? '').trim();
+    if (!s) return '#';
+    if (/^(https?:|mailto:|tel:|blob:|#|\/|\.\/|\?)/i.test(s)) return s;
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) return s;   // caminho relativo
+    return '#';
+  }
+  /** URL externa http(s) válida ou null */
+  function safeUrl(v) {
+    const s = String(v ?? '').trim();
+    if (!/^https?:\/\/\S+$/i.test(s)) return null;
+    try { return new URL(s).href; } catch (e) { return null; }
+  }
+  /**
+   * Botões com ação assíncrona ficam desabilitados (com indicador de progresso)
+   * até a ação terminar — evita cliques duplos que gravariam registros repetidos.
+   */
+  function busyHandler(el, fn) {
+    return function (e) {
+      if (el.classList.contains('is-busy')) { e.preventDefault(); return; }
+      const r = fn.call(this, e);
+      if (!r || typeof r.then !== 'function') return r;
+      const managed = !el.disabled;           // o próprio handler pode controlar o disabled
+      if (managed) el.disabled = true;
+      el.classList.add('is-busy'); el.setAttribute('aria-busy', 'true');
+      const t = setTimeout(() => el.classList.add('is-busy-show'), 160);
+      const end = () => { clearTimeout(t); el.classList.remove('is-busy', 'is-busy-show'); el.removeAttribute('aria-busy'); if (managed) el.disabled = false; };
+      r.then(end, end);
+      return r;
+    };
   }
   function append(el, children) {
     for (const c of children.flat(Infinity)) {
@@ -240,39 +274,76 @@
   // ------------------------------------------------------------------
   // Toast
   // ------------------------------------------------------------------
-  function toast(msg, type = 'ok', ms = 3600) {
+  function toast(msg, type = 'ok', ms) {
     let wrap = $('#toasts');
-    if (!wrap) { wrap = h('div', { id: 'toasts', 'aria-live': 'polite' }); document.body.appendChild(wrap); }
-    const t = h('div', { class: 'toast toast-' + type }, icon(type === 'ok' ? 'check' : type === 'err' ? 'alert' : 'bell', 16), h('span', null, msg));
+    if (!wrap) { wrap = h('div', { id: 'toasts', 'aria-live': 'polite', 'aria-relevant': 'additions' }); document.body.appendChild(wrap); }
+    msg = String(msg ?? '');
+    // o mesmo aviso repetido não empilha
+    for (const old of wrap.querySelectorAll('.toast')) if (old.dataset.msg === msg) old.remove();
+    while (wrap.children.length >= 4) wrap.firstChild.remove();
+    ms = ms || (type === 'err' ? 6500 : 3800);
+    const sair = () => { t.classList.remove('in'); setTimeout(() => t.remove(), 250); };
+    const t = h('div', { class: 'toast toast-' + type, role: type === 'err' ? 'alert' : 'status', dataset: { msg } },
+      icon(type === 'ok' ? 'check' : type === 'err' ? 'alert' : 'bell', 16), h('span', { class: 'toast-msg' }, msg),
+      h('button', { class: 'toast-x', type: 'button', 'aria-label': 'Fechar aviso', onclick: sair }, icon('x', 14)));
     wrap.appendChild(t);
     requestAnimationFrame(() => t.classList.add('in'));
-    setTimeout(() => { t.classList.remove('in'); setTimeout(() => t.remove(), 300); }, ms);
+    let timer = setTimeout(sair, ms);
+    t.addEventListener('mouseenter', () => clearTimeout(timer));
+    t.addEventListener('mouseleave', () => { timer = setTimeout(sair, 2000); });
   }
 
   // ------------------------------------------------------------------
   // Modal / Drawer / Confirmação
   // ------------------------------------------------------------------
   const stack = [];
+  let layerSeq = 0;
+  const FOCAVEIS = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
   function openLayer(kind, { title, subtitle, body, footer, size = 'md', onClose } = {}) {
-    const close = () => { layer.classList.remove('in'); setTimeout(() => layer.remove(), 180); const i = stack.indexOf(api); if (i >= 0) stack.splice(i, 1); onClose && onClose(); };
-    const panel = h('div', { class: `${kind} ${kind}-${size}`, role: 'dialog', 'aria-modal': 'true' },
+    const voltarFoco = document.activeElement;
+    let fechado = false;
+    const close = () => {
+      if (fechado) return; fechado = true;
+      layer.classList.remove('in'); setTimeout(() => layer.remove(), 180);
+      const i = stack.indexOf(api); if (i >= 0) stack.splice(i, 1);
+      if (!stack.length) document.body.classList.remove('has-layer');
+      try { if (voltarFoco && document.body.contains(voltarFoco)) voltarFoco.focus({ preventScroll: true }); } catch (e) { /* */ }
+      onClose && onClose();
+    };
+    const tid = 'lt' + (++layerSeq);
+    const panel = h('div', { class: `${kind} ${kind}-${size}`, role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': tid, tabindex: '-1' },
       h('div', { class: kind + '-head' },
-        h('div', { class: 'grow' }, h('h2', null, title || ''), subtitle ? h('div', { class: 'sub' }, subtitle) : null),
+        h('div', { class: 'grow' }, h('h2', { id: tid }, title || ''), subtitle ? h('div', { class: 'sub' }, subtitle) : null),
         h('button', { class: 'icon-btn', 'aria-label': 'Fechar', onclick: close }, icon('x'))),
       h('div', { class: kind + '-body' }, body),
       footer ? h('div', { class: kind + '-foot' }, footer) : null);
     const layer = h('div', { class: 'layer layer-' + kind, onmousedown: e => { if (e.target === layer) close(); } }, panel);
     document.body.appendChild(layer);
+    document.body.classList.add('has-layer');
     requestAnimationFrame(() => layer.classList.add('in'));
-    const first = panel.querySelector('input:not([type=hidden]),select,textarea');
-    if (first) setTimeout(() => first.focus(), 60);
+    // foco: primeiro campo do formulário (no celular só o painel, para o teclado não abrir sozinho)
+    const first = !matchMedia('(pointer: coarse)').matches && panel.querySelector('.' + kind + '-body input:not([type=hidden]):not([disabled]),.' + kind + '-body select,.' + kind + '-body textarea');
+    setTimeout(() => (first || panel).focus({ preventScroll: true }), 60);
+    // Tab circula dentro da janela aberta
+    panel.addEventListener('keydown', e => {
+      if (e.key !== 'Tab') return;
+      const f = Array.from(panel.querySelectorAll(FOCAVEIS)).filter(x => x.offsetParent !== null);
+      if (!f.length) return;
+      const a = f[0], z = f[f.length - 1];
+      if (e.shiftKey && (document.activeElement === a || document.activeElement === panel)) { z.focus(); e.preventDefault(); }
+      else if (!e.shiftKey && document.activeElement === z) { a.focus(); e.preventDefault(); }
+    });
     const api = { close, panel, layer, setBody(b) { clear(panel.querySelector('.' + kind + '-body')); append(panel.querySelector('.' + kind + '-body'), [b]); } };
     stack.push(api);
     return api;
   }
   const modal = o => openLayer('modal', o);
   const drawer = o => openLayer('drawer', { size: 'lg', ...o });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && stack.length) stack[stack.length - 1].close(); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (document.querySelector('.popmenu')) return;          // o menu aberto fecha primeiro
+    if (stack.length) stack[stack.length - 1].close();
+  });
 
   function confirmDialog({ title = 'Confirmar', message, confirm = 'Confirmar', danger = false } = {}) {
     return new Promise(res => {
@@ -331,16 +402,34 @@
       return out;
     };
     el.validate = () => {
-      let ok = true;
-      el.querySelectorAll('.field.invalid').forEach(x => x.classList.remove('invalid'));
+      let primeiro = null;
+      el.querySelectorAll('.field.invalid').forEach(x => { x.classList.remove('invalid'); const m = x.querySelector('.field-err'); if (m) m.remove(); });
+      el.querySelectorAll('[aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
+      const marcar = (inp, msg) => {
+        const fd = inp.closest('.field'); fd.classList.add('invalid'); inp.setAttribute('aria-invalid', 'true');
+        const m = h('div', { class: 'field-err', id: inp.id + '_err' }, msg); fd.appendChild(m); inp.setAttribute('aria-describedby', m.id);
+        primeiro = primeiro || inp;
+      };
       for (const f of fields) {
-        if (!f.required) continue;
+        if (f.section || f.type === 'checkbox') continue;
         const inp = el.querySelector('#f_' + f.name);
-        if (inp && !String(inp.value || '').trim()) { inp.closest('.field').classList.add('invalid'); ok = false; }
+        if (!inp || inp.disabled) continue;
+        const v = String(inp.value || '').trim();
+        if (f.required && !v) { marcar(inp, 'Campo obrigatório'); continue; }
+        if (!v) continue;
+        if (f.type === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) marcar(inp, 'Informe um e-mail válido');
+        else if (f.type === 'url' && !safeUrl(v)) marcar(inp, 'Informe um endereço que comece com https://');
+        else if ((f.type === 'number' || f.type === 'money') && isNaN(Number(v.replace(',', '.')))) marcar(inp, 'Informe um número');
+        else if (f.type === 'number' && f.min !== undefined && f.min !== null && Number(v.replace(',', '.')) < Number(f.min)) marcar(inp, 'O valor mínimo é ' + f.min);
+        else if (f.mask === 'cpf' && digits(v).length && digits(v).length !== 11) marcar(inp, 'O CPF tem 11 dígitos');
+        else if (f.mask === 'cnpj' && digits(v).length && digits(v).length !== 14) marcar(inp, 'O CNPJ tem 14 dígitos');
+        else if (f.mask === 'phone' && digits(v).length && digits(v).length < 10) marcar(inp, 'Informe o DDD e o número');
       }
-      if (!ok) toast('Preencha os campos obrigatórios', 'err');
-      return ok;
+      if (primeiro) { toast('Revise os campos destacados', 'err'); try { primeiro.focus(); } catch (e) { /* */ } }
+      return !primeiro;
     };
+    // a marcação de erro some assim que o campo é corrigido
+    el.addEventListener('input', e => { const fd = e.target.closest && e.target.closest('.field.invalid'); if (fd) { fd.classList.remove('invalid'); const m = fd.querySelector('.field-err'); if (m) m.remove(); e.target.removeAttribute('aria-invalid'); } });
     return el;
   }
   const masks = {
@@ -360,8 +449,12 @@
     const hue = [...String(name || '')].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
     return h('span', { class: 'avatar', style: { width: size + 'px', height: size + 'px', fontSize: Math.round(size * 0.38) + 'px', '--h': hue } }, fmt.initials(name));
   }
-  function empty(title, text, action) {
-    return h('div', { class: 'empty' }, h('div', { class: 'empty-mark' }, icon('layers', 22)), h('div', { class: 'empty-title' }, title), text ? h('div', { class: 'empty-text' }, text) : null, action || null);
+  function empty(title, text, action, ic = 'layers') {
+    return h('div', { class: 'empty', role: 'status' }, h('div', { class: 'empty-mark' }, icon(ic, 22)), h('div', { class: 'empty-title' }, title), text ? h('div', { class: 'empty-text' }, text) : null, action || null);
+  }
+  function errorState(e, onRetry) {
+    return empty('Não foi possível carregar', (e && e.message) || 'Verifique sua conexão e tente novamente.',
+      onRetry ? h('button', { class: 'btn', onclick: onRetry }, icon('refresh', 15), 'Tentar novamente') : null, 'alert');
   }
   function skeleton(rows = 6) {
     return h('div', { class: 'skel-wrap' }, Array.from({ length: rows }, (_, i) => h('div', { class: 'skel', style: { width: (70 + (i * 37) % 30) + '%' } })));
@@ -373,20 +466,30 @@
    * Tabela
    * cols: [{key, label, render(row), align, width, sort}]
    */
-  function table(cols, rows, { onRow, selectable, selected, onSelect, dense, emptyText = 'Nenhum registro encontrado', sortState, onSort } = {}) {
+  function table(cols, rows, { onRow, selectable, selected, onSelect, dense, emptyText = 'Nenhum registro encontrado', sortState, onSort, stack } = {}) {
     const sel = selected || new Set();
+    // no celular cada linha vira um cartão: a primeira coluna com rótulo é o título
+    const rotulo = c => (typeof c.label === 'string' ? c.label.trim() : '');
+    const principal = cols.findIndex(c => rotulo(c));
     const head = h('tr', null,
       selectable ? h('th', { class: 'col-sel' }, h('input', { type: 'checkbox', 'aria-label': 'Selecionar todos', checked: rows.length && rows.every(r => sel.has(r.id)) ? true : null,
         onchange: e => { rows.forEach(r => e.target.checked ? sel.add(r.id) : sel.delete(r.id)); onSelect && onSelect(sel); } })) : null,
-      cols.map(c => h('th', { class: [c.align ? 'a-' + c.align : '', c.sort && onSort ? 'sortable' : ''], style: c.width ? { width: c.width } : null,
-        onclick: c.sort && onSort ? () => onSort(c.sort) : null },
-        c.label, sortState && c.sort && sortState[0] === c.sort ? h('span', { class: 'sort-ind' }, sortState[1] ? ' ↑' : ' ↓') : null)));
-    const body = rows.length ? rows.map(r => h('tr', { class: onRow ? 'clickable' : '', onclick: onRow ? e => { if (e.target.closest('a,button,input,select,.no-row')) return; onRow(r); } : null },
+      cols.map(c => {
+        const ordenavel = c.sort && onSort, atual = sortState && c.sort && sortState[0] === c.sort;
+        return h('th', { class: [c.align ? 'a-' + c.align : '', ordenavel ? 'sortable' : ''], style: c.width ? { width: c.width } : null, scope: 'col',
+          tabindex: ordenavel ? '0' : null, 'aria-sort': atual ? (sortState[1] ? 'ascending' : 'descending') : null,
+          onclick: ordenavel ? () => onSort(c.sort) : null, onkeydown: ordenavel ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSort(c.sort); } } : null },
+          c.label, atual ? h('span', { class: 'sort-ind', 'aria-hidden': 'true' }, sortState[1] ? ' ↑' : ' ↓') : null);
+      }));
+    const body = rows.length ? rows.map(r => h('tr', { class: onRow ? 'clickable' : '', tabindex: onRow ? '0' : null,
+      onclick: onRow ? e => { if (e.target.closest('a,button,input,select,.no-row')) return; onRow(r); } : null,
+      onkeydown: onRow ? e => { if (e.key === 'Enter' && e.target === e.currentTarget) onRow(r); } : null },
       selectable ? h('td', { class: 'col-sel no-row' }, h('input', { type: 'checkbox', 'aria-label': 'Selecionar', checked: sel.has(r.id) ? true : null,
         onchange: e => { e.target.checked ? sel.add(r.id) : sel.delete(r.id); onSelect && onSelect(sel); } })) : null,
-      cols.map(c => h('td', { class: c.align ? 'a-' + c.align : '' }, c.render ? c.render(r) : (r[c.key] ?? '—')))))
+      cols.map((c, i) => h('td', { class: [c.align ? 'a-' + c.align : '', i === principal ? 'td-main' : '', rotulo(c) ? '' : 'td-aux'], 'data-label': rotulo(c) || null }, c.render ? c.render(r) : (r[c.key] ?? '—')))))
       : [h('tr', null, h('td', { colspan: cols.length + (selectable ? 1 : 0), class: 'td-empty' }, emptyText))];
-    return h('div', { class: 'table-wrap' + (dense ? ' dense' : '') }, h('table', { class: 'tbl' }, h('thead', null, head), h('tbody', null, body)));
+    const cartoes = stack !== false && cols.length > 2 && rows.length;
+    return h('div', { class: 'table-wrap' + (dense ? ' dense' : '') + (cartoes ? ' stack-sm' : '') }, h('table', { class: 'tbl' }, h('thead', null, head), h('tbody', null, body)));
   }
 
   function pager(page, size, total, onPage) {
@@ -405,15 +508,34 @@
   }
 
   function menu(anchor, items) {
-    document.querySelectorAll('.popmenu').forEach(m => m.remove());
+    document.querySelectorAll('.popmenu').forEach(m => m.fechar ? m.fechar(false) : m.remove());
     const r = anchor.getBoundingClientRect();
-    const m = h('div', { class: 'popmenu', role: 'menu' }, items.filter(Boolean).map(it => it === '-' ? h('div', { class: 'popmenu-sep' }) :
-      h('button', { class: 'popmenu-item' + (it.danger ? ' danger' : ''), role: 'menuitem', onclick: () => { m.remove(); it.onClick(); } }, it.icon ? icon(it.icon, 16) : null, it.label)));
+    const fechar = (focar = true) => {
+      m.remove(); document.removeEventListener('mousedown', fora); window.removeEventListener('resize', fecharSemFoco); document.removeEventListener('scroll', aoRolar, true);
+      anchor.setAttribute && anchor.setAttribute('aria-expanded', 'false');
+      if (focar && document.body.contains(anchor)) anchor.focus({ preventScroll: true });
+    };
+    const fecharSemFoco = () => fechar(false);
+    const aoRolar = e => { if (!m.contains(e.target)) fechar(false); };
+    const fora = e => { if (!m.contains(e.target) && !anchor.contains(e.target)) fechar(false); };
+    const m = h('div', { class: 'popmenu', role: 'menu' }, items.filter(Boolean).map(it => it === '-' ? h('div', { class: 'popmenu-sep', role: 'separator' }) :
+      h('button', { class: 'popmenu-item' + (it.danger ? ' danger' : ''), role: 'menuitem', type: 'button', onclick: () => { fechar(false); it.onClick(); } }, it.icon ? icon(it.icon, 16) : null, it.label)));
+    m.fechar = fechar;
+    m.addEventListener('keydown', e => {
+      const its = Array.from(m.querySelectorAll('.popmenu-item')); const i = its.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { its[(i + 1) % its.length].focus(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { its[(i - 1 + its.length) % its.length].focus(); e.preventDefault(); }
+      else if (e.key === 'Home') { its[0].focus(); e.preventDefault(); }
+      else if (e.key === 'End') { its[its.length - 1].focus(); e.preventDefault(); }
+      else if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); fechar(true); }
+    });
     document.body.appendChild(m);
+    anchor.setAttribute && (anchor.setAttribute('aria-haspopup', 'menu'), anchor.setAttribute('aria-expanded', 'true'));
     const w = m.offsetWidth;
-    m.style.top = Math.min(window.innerHeight - m.offsetHeight - 8, r.bottom + 6) + 'px';
+    m.style.top = Math.max(8, Math.min(window.innerHeight - m.offsetHeight - 8, r.bottom + 6)) + 'px';
     m.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w)) + 'px';
-    setTimeout(() => document.addEventListener('mousedown', function off(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('mousedown', off); } }), 0);
+    const primeiro = m.querySelector('.popmenu-item'); if (primeiro) primeiro.focus({ preventScroll: true });
+    setTimeout(() => { document.addEventListener('mousedown', fora); window.addEventListener('resize', fecharSemFoco); document.addEventListener('scroll', aoRolar, true); }, 0);
     return m;
   }
 
@@ -461,5 +583,5 @@
   }
 
   global.U = { imagemReduzida, contar, h, append, $, $$, clear, esc, fmt, dates, toDate, debounce, digits, waLink, groupBy, sum, store, icon, toast, modal, drawer, confirmDialog,
-    form, field, masks, badge, avatar, empty, skeleton, TEMP, tempChip, table, pager, tabs, menu, toCSV, download, loadScript };
+    form, field, masks, badge, avatar, empty, errorState, skeleton, TEMP, tempChip, table, pager, tabs, menu, toCSV, download, loadScript, safeUrl, safeHref };
 })(window);

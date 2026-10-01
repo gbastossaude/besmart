@@ -356,7 +356,7 @@
             l.temperatura_auto ? h('span', { class: 'dim', style: { fontSize: '11px' } }, '(automática)') : null,
             l.motivo_perda_nome ? badge('Motivo: ' + l.motivo_perda_nome, 'var(--bad)') : null, l.anonimizado_em ? badge('Anonimizado', 'var(--muted)') : null, App.implChip(l, true))),
         h('div', { class: 'l360-actions' },
-          l.whatsapp ? h('a', { class: 'btn', href: U.waLink(l.whatsapp, `Olá, ${l.nome.split(' ')[0]}!`), target: '_blank', rel: 'noopener', style: { color: '#5FE0A8' } }, icon('whatsapp', 16), 'Abrir conversa no WhatsApp') : null,
+          l.whatsapp ? h('a', { class: 'btn', href: U.waLink(l.whatsapp, `Olá, ${l.nome.split(' ')[0]}!`), target: '_blank', rel: 'noopener', style: { color: 'var(--ok-text)' } }, icon('whatsapp', 16), 'Abrir conversa no WhatsApp') : null,
           h('button', { class: 'btn', onclick: () => Forms.activity({ lead_id: l.id, nome: l.nome }, { onDone: reload }) }, icon('phone', 16), 'Registrar contato'),
           h('button', { class: 'btn', onclick: () => Forms.followup({ lead_id: l.id, nome: l.nome, responsavel_id: l.corretor_id }, { onDone: reload }) }, icon('clock', 16), 'Follow-up'),
           !l.client_id && aberto ? h('button', { class: 'btn primary', onclick: () => Forms.convert(l) }, icon('rocket', 16), 'Aprovado → Implantação') : null,

@@ -146,7 +146,7 @@
         if (state.search) o.search = { cols: ['nome', 'email'], term: state.search };
         const rows = await API.all('v_profiles', o);
         const pend = rows.filter(r => r.status === 'pendente').length;
-        clear(tb).append(pend ? h('div', { class: 'bulkbar', style: { background: 'rgba(242,169,59,.1)', borderColor: 'rgba(242,169,59,.45)', color: '#F7C77A' } }, icon('alert', 15), `${pend} usuário(s) aguardando aprovação.`) : null,
+        clear(tb).append(pend ? h('div', { class: 'bulkbar', style: { background: 'rgba(242,169,59,.1)', borderColor: 'rgba(242,169,59,.45)', color: 'var(--warn-text)' } }, icon('alert', 15), `${pend} usuário(s) aguardando aprovação.`) : null,
           U.table([
             { label: 'Usuário', render: u => h('div', { class: 'person' }, avatar(u.nome, 30), h('div', null, h('div', { class: 'cell-main' }, u.nome), h('div', { class: 'cell-sub' }, u.email))) },
             { label: 'Papel', render: u => badge(App.PAPEIS[u.papel], { admin: 'var(--bad)', gerente: 'var(--cyan)', supervisor: 'var(--blue-2)', corretor: 'var(--text-2)' }[u.papel], 'square') },

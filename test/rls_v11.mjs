@@ -386,4 +386,16 @@ export default async function ({ q, exec, as, ok, expectErr, U, leads }) {
     const h = await q(`select descricao from lead_history where lead_id = $1 and titulo = 'Lead convertido em cliente'`, [l.id]);
     ok(h.length === 1 && /implantação/.test(h[0].descricao), 'timeline registra o envio para a implantação');
   });
+  console.log('\n# v1.4 · Fuso de São Paulo e link de reunião seguro');
+  await as(U.c3, async () => {
+    // contato registrado às 23h30 de São Paulo (02h30 UTC do dia seguinte) continua sendo "hoje"
+    const cli = (await q(`select id from v_relacionamento where corretor_id = $1 limit 1`, [U.c3]))[0].id;
+    await q(`insert into activities(client_id, tipo, efetivo, realizado_em) values ($1, 'whatsapp', true, (private.hoje_sp() + time '23:30') at time zone 'America/Sao_Paulo')`, [cli]);
+    ok((await q(`select dias_sem_contato from v_relacionamento where id = $1`, [cli]))[0].dias_sem_contato === 0, 'contato às 23h30 (horário de Brasília) conta como hoje');
+    await expectErr(q(`insert into events(titulo, tipo, inicio, link_reuniao) values ('Reunião', 'reuniao', now() + interval '1 day', 'javascript:alert(1)')`), 'link de reunião "javascript:" é recusado');
+    const ev = (await q(`insert into events(titulo, tipo, inicio, link_reuniao) values ('Reunião', 'reuniao', now() + interval '1 day', 'https://meet.google.com/abc-defg-hij') returning id`))[0];
+    ok(!!ev.id, 'link de reunião https aceito');
+  });
+  const dv = (await q(`select column_default d from information_schema.columns where table_name = 'sales' and column_name = 'data_venda'`))[0].d;
+  ok(/hoje_sp/.test(dv), 'data da venda padrão no fuso de São Paulo');
 }

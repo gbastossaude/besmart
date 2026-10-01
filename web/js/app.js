@@ -22,8 +22,55 @@
       this.render(target);
     },
     reload() { this.render(this._current || '#/dashboard', true); },
-    async err(e) { console.error(e); toast(e && e.message ? e.message : String(e), 'err', 5200); },
+    /** mostra o erro de forma compreensível; o detalhe técnico fica só no console */
+    async err(e) {
+      if (!e) return;
+      console.error('[Atos]', e);
+      const msg = e instanceof global.ApiError ? e.message : global.apiFriendly(e);
+      if (e.sessao || msg === 'Sua sessão expirou. Entre novamente.') return sessaoExpirada();
+      toast(msg, 'err');
+    },
   };
+  // qualquer promessa rejeitada sem tratamento vira um aviso claro, nunca um erro silencioso
+  global.addEventListener('unhandledrejection', ev => { ev.preventDefault(); App.err(ev.reason); });
+  global.addEventListener('error', ev => { if (ev.error) console.error('[Atos] erro inesperado', ev.error); });
+
+  async function sessaoExpirada() {
+    if (!App.me || App._saindo) return;
+    App._saindo = true;
+    try { await API.signOut(); } catch (e) { /* */ }
+    App._saindo = false;
+    loginScreen('Sua sessão expirou. Entre novamente para continuar de onde parou.');
+  }
+
+  // ------------------------------------------------------------------
+  // Conexão: aviso fixo enquanto estiver sem internet
+  // ------------------------------------------------------------------
+  function avisoConexao() {
+    let bar = document.getElementById('offline-bar');
+    if (navigator.onLine !== false) {
+      if (bar) { bar.remove(); if (App.me && App._estavaOffline) { toast('Conexão restabelecida'); App.reload(); App.refreshCounts(); } }
+      App._estavaOffline = false;
+      return;
+    }
+    App._estavaOffline = true;
+    if (!bar) document.body.appendChild(h('div', { id: 'offline-bar', role: 'alert' }, icon('alert', 15), 'Sem conexão com a internet. As alterações não serão salvas até a conexão voltar.'));
+  }
+  global.addEventListener('online', avisoConexao);
+  global.addEventListener('offline', avisoConexao);
+
+  // ------------------------------------------------------------------
+  // Tema (escuro, claro ou o do sistema)
+  // ------------------------------------------------------------------
+  App.tema = () => U.store('tema') || 'escuro';
+  App.aplicarTema = (t = App.tema()) => {
+    const claro = t === 'claro' || (t === 'sistema' && global.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+    document.documentElement.dataset.theme = claro ? 'light' : 'dark';
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = claro ? '#F5F7FB' : '#05070B';
+    const cs = document.querySelector('meta[name="color-scheme"]'); if (cs) cs.content = claro ? 'light' : 'dark';
+  };
+  App.aplicarTema();
+  try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (App.tema() === 'sistema') App.aplicarTema(); }); } catch (e) { /* */ }
 
   // ------------------------------------------------------------------
   // Marca (SVG)
@@ -112,7 +159,14 @@
       await enter(uid);
       if (global.ATOS_LINK_SENHA) { try { history.replaceState(null, '', location.pathname + '#/dashboard'); } catch (e) { /* */ } recoveryScreen(global.ATOS_LINK_SENHA); global.ATOS_LINK_SENHA = null; }
     } catch (e) { App.err(e); loginScreen(); }
-    if (API.onAuth) API.onAuth((ev) => { if (ev === 'SIGNED_OUT') loginScreen(); if (ev === 'PASSWORD_RECOVERY') recoveryScreen(); });
+    if (API.onAuth && !App._authOuvindo) {
+      App._authOuvindo = true;
+      API.onAuth((ev) => {
+        if (ev === 'SIGNED_OUT' && App.me && !App._saindo) loginScreen(App._saidaVoluntaria ? null : 'Sua sessão terminou. Entre novamente para continuar.');
+        if (ev === 'PASSWORD_RECOVERY') recoveryScreen();
+      });
+    }
+    avisoConexao();
   };
 
   async function enter(uid) {
@@ -173,17 +227,29 @@
   function stopLive() { if (live) { live.stop(); live = null; } }
   App.stopLive = stopLive;
 
-  function loginScreen() {
+  function loginScreen(aviso) {
     stopLive();
     App.me = null;
-    const email = h('input', { type: 'email', id: 'login_email', placeholder: 'seu@email.com.br', autocomplete: 'username' });
-    const pw = h('input', { type: 'password', id: 'login_pw', placeholder: 'Senha', autocomplete: 'current-password' });
-    const btn = h('button', { class: 'btn primary', style: { width: '100%', height: '40px' }, type: 'submit' }, 'Entrar');
+    document.title = 'Entrar · Atos';
+    const email = h('input', { type: 'email', id: 'login_email', placeholder: 'seu@email.com.br', autocomplete: 'username', inputmode: 'email', required: true, value: U.store('ultimo_email') || '' });
+    const pw = h('input', { type: 'password', id: 'login_pw', placeholder: 'Sua senha', autocomplete: 'current-password', required: true });
+    const ver = h('button', { type: 'button', class: 'pw-toggle', 'aria-label': 'Mostrar senha', 'aria-pressed': 'false',
+      onclick: () => { const on = pw.type === 'password'; pw.type = on ? 'text' : 'password'; ver.setAttribute('aria-pressed', String(on)); ver.setAttribute('aria-label', on ? 'Ocultar senha' : 'Mostrar senha'); ver.classList.toggle('on', on); pw.focus(); } }, icon('eye', 17));
+    const msg = h('div', { class: 'login-msg', role: 'alert', hidden: !aviso }, aviso ? [icon('alert', 15), h('span', null, aviso)] : null);
+    const btn = h('button', { class: 'btn primary lg', style: { width: '100%' }, type: 'submit' }, 'Entrar');
+    const erro = texto => { clear(msg); msg.append(icon('alert', 15), h('span', null, texto)); msg.hidden = false; };
     const doLogin = async (e) => {
       e && e.preventDefault();
-      btn.disabled = true;
-      try { await API.signIn(email.value, pw.value); await enter(await API.session()); }
-      catch (er) { App.err(er); btn.disabled = false; }
+      const em = email.value.trim();
+      if (!em || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { erro('Informe um e-mail válido.'); email.focus(); return; }
+      if (!pw.value) { erro('Informe a sua senha.'); pw.focus(); return; }
+      msg.hidden = true; btn.disabled = true; btn.classList.add('is-busy', 'is-busy-show'); btn.textContent = 'Entrando…';
+      try { await API.signIn(em, pw.value); U.store('ultimo_email', em); await enter(await API.session()); }
+      catch (er) {
+        console.warn('[Atos] login', er);
+        erro(er instanceof global.ApiError ? er.message : global.apiFriendly(er));
+        btn.disabled = false; btn.classList.remove('is-busy', 'is-busy-show'); btn.textContent = 'Entrar'; pw.select();
+      }
     };
     const demo = API.mode === 'demo' ? (() => {
       const us = API.demoUsers();
@@ -207,24 +273,26 @@
       h('div', { class: 'login-box' }, h('div', { class: 'login-card' },
         h('h2', null, 'Acessar o Atos'),
         h('p', { class: 'muted', style: { margin: '0 0 18px' } }, 'Use o e-mail e a senha cadastrados pela sua corretora.'),
-        h('form', { class: 'stack', onsubmit: doLogin, style: { gap: '10px' } },
+        h('form', { class: 'stack', onsubmit: doLogin, style: { gap: '12px' }, novalidate: true },
+          msg,
           h('div', { class: 'field' }, h('label', { for: 'login_email' }, 'E-mail'), email),
-          h('div', { class: 'field' }, h('label', { for: 'login_pw' }, 'Senha'), pw),
+          h('div', { class: 'field' }, h('label', { for: 'login_pw' }, 'Senha'), h('div', { class: 'pw-wrap' }, pw, ver)),
           btn,
           h('div', { class: 'row', style: { justifyContent: 'space-between', fontSize: '12.5px' } },
             h('a', { href: '#', onclick: e => { e.preventDefault(); forgot(email.value); } }, 'Esqueci minha senha'),
             h('a', { href: '#', onclick: e => { e.preventDefault(); signupModal(); } }, 'Solicitar acesso'))),
         demo))));
+    setTimeout(() => { try { (email.value ? pw : email).focus({ preventScroll: true }); } catch (e) { /* */ } }, 50);
   }
   function forgot(email) {
     const f = U.form([{ name: 'email', label: 'E-mail', type: 'email', required: true }], { email }, { cols: 1 });
-    const m = modal({ title: 'Recuperar senha', size: 'sm', body: f, footer: [h('button', { class: 'btn primary', onclick: async () => { if (!f.validate()) return; try { await API.resetPassword(f.values().email); m.close(); toast('Enviamos o link de redefinição para o seu e-mail.'); } catch (e) { App.err(e); } } }, 'Enviar link')] });
+    const m = modal({ title: 'Recuperar senha', subtitle: 'Enviaremos um link para você criar uma nova senha.', size: 'sm', body: f, footer: [h('button', { class: 'btn ghost', onclick: () => m.close() }, 'Cancelar'), h('button', { class: 'btn primary', onclick: async () => { if (!f.validate()) return; try { await API.resetPassword(f.values().email); m.close(); toast('Se o e-mail estiver cadastrado, o link de redefinição chegará em instantes (confira também o spam).', 'ok', 7000); } catch (e) { App.err(e); } } }, 'Enviar link')] });
   }
   function signupModal() {
     const f = U.form([{ name: 'nome', label: 'Nome completo', required: true }, { name: 'email', label: 'E-mail', type: 'email', required: true }, { name: 'senha', label: 'Senha', type: 'password', required: true, hint: 'Mínimo de 8 caracteres' }], {}, { cols: 1 });
     const m = modal({ title: 'Solicitar acesso', subtitle: 'O administrador precisa aprovar seu cadastro e definir sua equipe.', size: 'sm', body: f,
-      footer: [h('button', { class: 'btn primary', onclick: async () => { if (!f.validate()) return; const v = f.values(); if ((v.senha || '').length < 8) return toast('A senha precisa ter ao menos 8 caracteres', 'err');
-        try { await API.signUp(v.email, v.senha, v.nome); m.close(); toast('Cadastro enviado. Aguarde a aprovação do administrador.'); } catch (e) { App.err(e); } } }, 'Enviar solicitação')] });
+      footer: [h('button', { class: 'btn ghost', onclick: () => m.close() }, 'Cancelar'), h('button', { class: 'btn primary', onclick: async () => { if (!f.validate()) return; const v = f.values(); if ((v.senha || '').length < 8) return toast('A senha precisa ter ao menos 8 caracteres', 'err');
+        try { await API.signUp(v.email, v.senha, v.nome); m.close(); toast('Cadastro enviado. Você será avisado por e-mail quando o administrador aprovar.', 'ok', 6500); } catch (e) { App.err(e); } } }, 'Enviar solicitação')] });
   }
   function pendingScreen(me) {
     clear(root()).appendChild(h('div', { class: 'boot' }, h('div', { class: 'login-card', style: { textAlign: 'center' } }, App.brand(), h('h2', { style: { marginTop: '24px' } }, me.status === 'inativo' ? 'Acesso desativado' : 'Aguardando aprovação'),
@@ -287,7 +355,7 @@
       const items = g.items.filter(i => !i.show || i.show());
       if (!items.length) return;
       nav.appendChild(h('div', { class: 'nav-group' }, g.group ? h('div', { class: 'nav-label' }, g.group) : null,
-        items.map(i => h('a', { class: 'nav-item', href: '#/' + i.key, dataset: { key: i.key }, onclick: () => document.querySelector('.app').classList.remove('nav-open') },
+        items.map(i => h('a', { class: 'nav-item', href: '#/' + i.key, dataset: { key: i.key }, onclick: () => { abrirNav(false); App._focarConteudo = true; } },
           icon(i.icon, 18), h('span', null, i.label), i.count ? h('span', { class: 'nav-count', dataset: { count: i.count }, hidden: true }) : null))));
     });
     const side = h('aside', { class: 'side' },
@@ -296,14 +364,14 @@
       h('div', { class: 'side-foot' }, h('button', { class: 'me-card', onclick: e => userMenu(e.currentTarget) },
         avatar(App.me.nome, 34), h('div', { class: 'grow' }, h('div', { class: 'me-name' }, App.me.nome), h('div', { class: 'me-role' }, PAPEIS[App.papel] + (App.me.team_nome ? ' · ' + App.me.team_nome : ''))), icon('more', 16))));
 
-    const searchInput = h('input', { type: 'search', placeholder: 'Buscar nome, CPF, CNPJ, telefone, e-mail, nº da proposta…', 'aria-label': 'Busca global', id: 'gsearch',
+    const searchInput = h('input', { type: 'search', placeholder: global.innerWidth < 600 ? 'Buscar…' : 'Buscar nome, CPF, CNPJ, telefone, e-mail, nº da proposta…', 'aria-label': 'Busca global', id: 'gsearch', readonly: true,
       onfocus: e => { e.target.blur(); globalSearch(''); } });
     const top = h('header', { class: 'topbar' },
-      h('button', { class: 'icon-btn menu-btn', 'aria-label': 'Abrir menu', onclick: () => document.querySelector('.app').classList.toggle('nav-open') }, icon('menu')),
-      h('label', { class: 'search', onclick: () => globalSearch('') }, icon('search', 16), searchInput, h('span', { class: 'kbd' }, 'Ctrl K')),
+      h('button', { class: 'icon-btn menu-btn', 'aria-label': 'Abrir menu', 'aria-expanded': 'false', onclick: () => abrirNav(!document.querySelector('.app').classList.contains('nav-open')) }, icon('menu')),
+      h('label', { class: 'search', onclick: () => globalSearch('') }, icon('search', 16), searchInput, h('span', { class: 'kbd' }, /Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘ K' : 'Ctrl K')),
       h('div', { class: 'top-actions' },
         h('button', { class: 'btn primary', onclick: e => quickMenu(e.currentTarget) }, icon('plus', 16), h('span', { class: 'lbl' }, 'Novo')),
-        h('button', { class: 'icon-btn bell', 'aria-label': 'Notificações', onclick: () => notifDrawer() }, icon('bell'), h('span', { class: 'bell-dot', id: 'bellDot', hidden: true }))));
+        h('button', { class: 'icon-btn bell', 'aria-label': 'Notificações', title: 'Notificações', onclick: () => notifDrawer() }, icon('bell'), h('span', { class: 'bell-dot', id: 'bellDot', hidden: true }))));
 
     const demoBar = API.mode === 'demo' ? h('div', { class: 'demo-bar' }, icon('eye', 15),
       h('span', null, h('b', null, 'Modo demonstração'), ' · dados de exemplo em memória, alterações somem ao recarregar. Ver como:'),
@@ -311,25 +379,73 @@
         ['admin', 'gerente', 'supervisor', 'corretor'].map(p => h('optgroup', { label: PAPEIS[p] }, API.demoUsers().filter(u => u.papel === p).map(u => h('option', { value: u.id, selected: u.id === App.me.id || null }, u.nome + (u.equipe ? ' · ' + u.equipe : ''))))))) : null;
 
     const content = h('main', { class: 'content', id: 'content', tabindex: '-1' });
-    clear(root()).appendChild(h('div', { class: 'app' }, side, h('div', { class: 'main' }, demoBar, top, content)));
+    App.observarFiltros(content);
+    const pode = k => NAV.some(g => g.items.some(i => i.key === k && (!i.show || i.show())));
+    const inicio = App.is('corretor') ? ['carteira', 'Carteira', 'wallet'] : ['dashboard', 'Início', 'dashboard'];
+    const bottom = h('nav', { class: 'bottom-nav', 'aria-label': 'Atalhos' },
+      [inicio, ['crm', 'CRM', 'kanban'], ['followups', 'Follow-ups', 'clock'], ['agenda', 'Agenda', 'calendar']].filter(([k]) => pode(k)).map(([k, l, ic]) =>
+        h('a', { href: '#/' + k, dataset: { key: k } }, icon(ic, 20), h('span', null, l), k === 'followups' ? h('span', { class: 'nav-count', dataset: { count: 'followups' }, hidden: true }) : null)),
+      h('button', { type: 'button', 'aria-label': 'Abrir menu completo', onclick: () => abrirNav(true) }, icon('menu', 20), h('span', null, 'Menu')));
+    clear(root()).appendChild(h('div', { class: 'app' },
+      h('a', { class: 'skip-link', href: '#content', onclick: e => { e.preventDefault(); content.focus(); } }, 'Pular para o conteúdo'),
+      side, h('div', { class: 'main' }, demoBar, top, content), bottom,
+      h('div', { class: 'nav-scrim', onclick: () => abrirNav(false), 'aria-hidden': 'true' })));
   }
+  function abrirNav(on) {
+    const app = document.querySelector('.app'); if (!app) return;
+    app.classList.toggle('nav-open', on);
+    const b = document.querySelector('.menu-btn'); if (b) b.setAttribute('aria-expanded', String(on));
+    if (on) { const a = app.querySelector('.side .nav-item.active') || app.querySelector('.side .nav-item'); if (a) setTimeout(() => a.focus({ preventScroll: true }), 50); }
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.app.nav-open') && !document.querySelector('.layer')) abrirNav(false); });
 
   function userMenu(anchor) {
     menu(anchor, [
       { label: 'Meu perfil', icon: 'user', onClick: () => profileModal() },
       { label: App.me.disponivel ? 'Pausar recebimento de leads' : 'Voltar a receber leads', icon: 'zap', onClick: async () => {
         try { await API.rpc('atualizar_meu_perfil', { p_disponivel: !App.me.disponivel }); App.me.disponivel = !App.me.disponivel; toast(App.me.disponivel ? 'Você está disponível para novos leads' : 'Recebimento de leads pausado'); } catch (e) { App.err(e); } } },
-      '-',
       global.Notification && Notification.permission !== 'granted' ? { label: 'Ativar alertas do navegador', icon: 'bell', onClick: async () => { try { const p = await Notification.requestPermission(); toast(p === 'granted' ? 'Você receberá alertas mesmo com o Atos em segundo plano' : 'Permissão não concedida pelo navegador', p === 'granted' ? 'ok' : 'err'); } catch (e) { App.err(e); } } } : null,
-      { label: 'Sair', icon: 'logout', danger: true, onClick: async () => { stopLive(); try { await API.rpc('registrar_saida', {}); } catch (e) { /* */ } await API.signOut(); loginScreen(); } },
+      { label: 'Aparência: ' + { escuro: 'escura', claro: 'clara', sistema: 'do sistema' }[App.tema()], icon: 'eye', onClick: () => temaModal() },
+      { label: 'Atalhos de teclado', icon: 'zap', onClick: () => atalhosModal() },
+      '-',
+      { label: 'Sair', icon: 'logout', danger: true, onClick: async () => { stopLive(); App._saidaVoluntaria = true; try { await API.rpc('registrar_saida', {}); } catch (e) { /* */ } try { await API.signOut(); } catch (e) { /* */ } App._saidaVoluntaria = false; loginScreen(); } },
     ]);
   }
+  function temaModal() {
+    const opc = [['escuro', 'Escura', 'Ideal para longas jornadas e ambientes com pouca luz'], ['claro', 'Clara', 'Melhor leitura em ambientes iluminados'], ['sistema', 'Igual ao sistema', 'Acompanha a configuração do computador ou celular']];
+    const lista = h('div', { class: 'theme-opts', role: 'radiogroup', 'aria-label': 'Aparência' }, opc.map(([k, t, d]) => h('button', { class: 'theme-opt' + (App.tema() === k ? ' on' : ''), role: 'radio', 'aria-checked': String(App.tema() === k), type: 'button',
+      onclick: () => { U.store('tema', k); App.aplicarTema(k); lista.querySelectorAll('.theme-opt').forEach(b => { const on = b.dataset.k === k; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }); }, dataset: { k } },
+      h('span', { class: 'theme-sw theme-sw-' + k }), h('span', null, h('b', null, t), h('small', null, d)))));
+    const m = modal({ title: 'Aparência', subtitle: 'A escolha fica salva neste navegador.', size: 'sm', body: lista, footer: [h('button', { class: 'btn primary', onclick: () => m.close() }, 'Pronto')] });
+  }
+  function atalhosModal() {
+    const mac = /Mac|iPhone|iPad/.test(navigator.platform || '');
+    const k = mac ? '⌘' : 'Ctrl';
+    const linhas = [[k + ' K', 'Busca global (leads, clientes, vendas)'], ['N', 'Criar novo (lead, cliente, venda…)'], ['G depois D', 'Ir para o Dashboard'], ['G depois C', 'Ir para o CRM'], ['G depois L', 'Ir para Leads'], ['G depois A', 'Ir para a Agenda'], ['Esc', 'Fechar janela ou menu aberto'], ['?', 'Mostrar estes atalhos']];
+    modal({ title: 'Atalhos de teclado', size: 'sm', body: h('dl', { class: 'kv kbd-list' }, linhas.map(([a, b]) => [h('dt', null, a.split(' depois ').map((x, i) => [i ? h('span', { class: 'muted' }, ' depois ') : null, h('span', { class: 'kbd' }, x)])), h('dd', null, b)])) });
+  }
+  // atalhos: N (novo), G+tecla (ir para), ? (ajuda) — ignorados enquanto se digita
+  let prefixoG = 0;
+  document.addEventListener('keydown', e => {
+    if (!App.me || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+    const alvo = e.target; if (alvo && (alvo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(alvo.tagName))) return;
+    if (document.querySelector('.layer, .popmenu')) return;
+    const key = e.key.toLowerCase();
+    if (Date.now() - prefixoG < 1200) {
+      const destino = { d: '/dashboard', c: '/crm', l: '/leads', a: '/agenda', v: '/vendas', f: '/followups', t: '/tarefas' }[key];
+      prefixoG = 0; if (destino) { e.preventDefault(); App.go(destino); } return;
+    }
+    if (key === 'g') { prefixoG = Date.now(); return; }
+    if (key === 'n') { const b = document.querySelector('.top-actions .btn.primary'); if (b) { e.preventDefault(); quickMenu(b); } return; }
+    if (e.key === '?') { e.preventDefault(); atalhosModal(); }
+  });
+
   function profileModal() {
     const f = U.form([{ name: 'nome', label: 'Nome', required: true }, { name: 'telefone', label: 'Telefone', mask: 'phone' }, { name: 'email', label: 'E-mail', disabled: true }, { name: 'papel', label: 'Papel', disabled: true }],
       { ...App.me, telefone: fmt.phone(App.me.telefone), papel: PAPEIS[App.papel] }, { cols: 2 });
     const m = modal({ title: 'Meu perfil', body: f, footer: [
       API.mode !== 'demo' ? h('button', { class: 'btn ghost', onclick: () => recoveryScreen() }, 'Alterar senha') : null,
-      h('button', { class: 'btn primary', onclick: async () => { const v = f.values(); try { await API.rpc('atualizar_meu_perfil', { p_nome: v.nome, p_telefone: U.digits(v.telefone) }); App.me.nome = v.nome; m.close(); toast('Perfil atualizado'); } catch (e) { App.err(e); } } }, 'Salvar')] });
+      h('button', { class: 'btn primary', onclick: async () => { if (!f.validate()) return; const v = f.values(); try { await API.rpc('atualizar_meu_perfil', { p_nome: v.nome, p_telefone: U.digits(v.telefone) }); App.me.nome = v.nome; document.querySelectorAll('.me-name').forEach(x => { x.textContent = v.nome; }); m.close(); toast('Perfil atualizado'); } catch (e) { App.err(e); } } }, 'Salvar')] });
   }
 
   function quickMenu(anchor) {
@@ -355,7 +471,15 @@
     const open = it => { m.close(); App.go(it.tipo === 'lead' ? '/leads/' + it.id : it.tipo === 'cliente' ? '/clientes/' + it.id : '/vendas/' + it.id); };
     const paint = () => { clear(list); if (!items.length) { list.appendChild(h('div', { class: 'muted', style: { padding: '14px 4px' } }, input.value.trim().length < 2 ? 'Digite ao menos 2 caracteres.' : 'Nada encontrado na sua carteira.')); return; }
       items.forEach((it, i) => list.appendChild(h('button', { class: 'gs-item' + (i === sel ? ' sel' : ''), onclick: () => open(it) }, h('span', { class: 'gs-type' }, it.tipo), h('div', { class: 'grow' }, h('div', { class: 'li-title' }, it.titulo), h('div', { class: 'li-sub' }, it.sub || '')), icon('chevronRight', 16)))); };
-    const run = debounce(async () => { try { items = await API.rpc('busca_global', { p_termo: input.value }); sel = 0; paint(); } catch (e) { App.err(e); } }, 220);
+    let seqBusca = 0;
+    const run = debounce(async () => {
+      const termo = input.value.trim(), seq = ++seqBusca;
+      if (termo.length < 2) { items = []; paint(); return; }
+      list.setAttribute('aria-busy', 'true');
+      try { const r = await API.rpc('busca_global', { p_termo: termo }); if (seq !== seqBusca) return; items = r || []; sel = 0; paint(); }
+      catch (e) { if (seq === seqBusca) { items = []; clear(list).appendChild(h('div', { class: 'bad-t', style: { padding: '14px 4px' }, role: 'alert' }, e.message || 'Não foi possível buscar agora.')); } }
+      finally { if (seq === seqBusca) list.removeAttribute('aria-busy'); }
+    }, 220);
     input.addEventListener('input', run);
     input.addEventListener('keydown', e => { if (e.key === 'ArrowDown') { sel = Math.min(items.length - 1, sel + 1); paint(); e.preventDefault(); } if (e.key === 'ArrowUp') { sel = Math.max(0, sel - 1); paint(); e.preventDefault(); } if (e.key === 'Enter' && items[sel]) open(items[sel]); });
     const m = modal({ title: 'Busca global', subtitle: 'Resultados limitados à sua carteira e estrutura', size: 'md', body: h('div', { class: 'stack' }, input, list) });
@@ -372,16 +496,23 @@
     manter_contato: ['whatsapp', 'var(--ok)'], sla_atrasado: ['zap', 'var(--bad)'], convite_evento: ['calendar', 'var(--blue-2)'], resposta_convite: ['users', 'var(--cyan)'], evento_proximo: ['bell', 'var(--warn)'], evento_alterado: ['calendar', 'var(--warn)'], evento_cancelado: ['x', 'var(--bad)'] };
   App.notifItem = (n, after) => {
     const [ic, c] = NOTIF_IC[n.tipo] || ['bell', 'var(--blue-2)'];
-    return h('div', { class: 'notif' + (n.lida ? '' : ' unread'), onclick: async () => { if (!n.lida) { await API.rpc('marcar_notificacoes_lidas', { p_ids: [n.id] }); App.refreshCounts(); } if (after) after(); if (n.link) App.go(n.link.replace(/^#/, '')); } },
+    const abrir = async () => { if (!n.lida) { try { await API.rpc('marcar_notificacoes_lidas', { p_ids: [n.id] }); n.lida = true; App.refreshCounts(); } catch (e) { console.warn(e); } } if (after) after(); if (n.link) App.go(n.link.replace(/^#/, '')); };
+    return h('div', { class: 'notif' + (n.lida ? '' : ' unread'), role: 'button', tabindex: '0', onclick: abrir, onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } } },
       h('div', { class: 'notif-ic', style: { '--c': c } }, icon(ic, 17)),
       h('div', { class: 'grow' }, h('div', { class: 'notif-t' }, n.titulo), n.mensagem ? h('div', { class: 'notif-m' }, n.mensagem) : null, h('div', { class: 'notif-d' }, fmt.rel(n.created_at))));
   };
   async function notifDrawer() {
     const body = h('div', null, U.skeleton(5));
     const d = drawer({ title: 'Notificações', size: 'md', body, footer: [h('button', { class: 'btn ghost', onclick: () => { d.close(); App.go('/notificacoes'); } }, 'Ver todas'),
-      h('button', { class: 'btn', onclick: async () => { await API.rpc('marcar_notificacoes_lidas', { p_ids: null }); d.close(); App.refreshCounts(); toast('Notificações marcadas como lidas'); } }, 'Marcar todas como lidas')] });
-    const { rows } = await API.list('notifications', { order: [['created_at', false]], limit: 30 });
-    clear(body).appendChild(rows.length ? h('div', null, rows.map(n => App.notifItem(n, () => d.close()))) : empty('Tudo em dia', 'Você não tem notificações.'));
+      h('button', { class: 'btn', onclick: async () => { try { await API.rpc('marcar_notificacoes_lidas', { p_ids: null }); d.close(); App.refreshCounts(); toast('Notificações marcadas como lidas'); } catch (e) { App.err(e); } } }, 'Marcar todas como lidas')] });
+    const carregar = async () => {
+      clear(body).appendChild(U.skeleton(5));
+      try {
+        const { rows } = await API.list('notifications', { order: [['created_at', false]], limit: 30 });
+        clear(body).appendChild(rows.length ? h('div', null, rows.map(n => App.notifItem(n, () => d.close()))) : empty('Tudo em dia', 'Você não tem notificações.', null, 'bell'));
+      } catch (e) { console.warn(e); clear(body).appendChild(U.errorState(e instanceof global.ApiError ? e : { message: global.apiFriendly(e) }, carregar)); }
+    };
+    await carregar();
   }
 
   App.refreshCounts = async function () {
@@ -399,6 +530,7 @@
       if (App.can('presenca.ver')) { try { App.counts.online = (await API.all('v_presence', { eq: { situacao: 'online' } })).filter(x => x.id !== App.me.id).length; } catch (e) { /* */ } }
       document.querySelectorAll('[data-count]').forEach(el => { const v = App.counts[el.dataset.count]; el.hidden = !v; el.textContent = v > 99 ? '99+' : v; el.classList.toggle('alert', !['notif', 'online', 'relacionamento'].includes(el.dataset.count)); el.classList.toggle('live', el.dataset.count === 'online'); el.classList.toggle('gold', el.dataset.count === 'relacionamento'); });
       const dot = $('#bellDot'); if (dot) { dot.hidden = !nt.count; dot.textContent = nt.count > 9 ? '9+' : nt.count; }
+      const bell = document.querySelector('.icon-btn.bell'); if (bell) bell.setAttribute('aria-label', nt.count ? `Notificações: ${nt.count} não lida(s)` : 'Notificações');
     } catch (e) { console.warn(e); }
   };
 
@@ -434,14 +566,61 @@
       if (!view) throw new Error('Tela não encontrada');
       const node = await view(params);
       if (seq !== renderSeq) return;
+      if (!keepScroll && node && node.classList) node.classList.add('enter');
       clear(content).appendChild(node);
+      melhorarFiltros(content);
       if (keepScroll) content.scrollTop = scroll;
+      const h1 = content.querySelector('h1');
+      document.title = (h1 ? h1.textContent.trim() : (TELAS[name] || 'Atos')) + ' · Atos';
+      if (!keepScroll && App._focarConteudo) { App._focarConteudo = false; content.focus({ preventScroll: true }); }
     } catch (e) {
       if (seq !== renderSeq) return;
-      console.error(e);
-      clear(content).appendChild(empty('Não foi possível abrir esta tela', e.message, h('button', { class: 'btn', onclick: () => App.reload() }, 'Tentar novamente')));
+      console.error('[Atos] tela', name, e);
+      if (e && e.sessao) return sessaoExpirada();
+      const msg = e instanceof global.ApiError ? e.message : (e && e.message === 'Tela não encontrada' ? 'Este endereço não existe ou foi removido.' : global.apiFriendly(e));
+      clear(content).appendChild(empty('Não foi possível abrir esta tela', msg,
+        h('div', { class: 'row', style: { justifyContent: 'center' } }, h('button', { class: 'btn', onclick: () => App.reload() }, icon('refresh', 15), 'Tentar novamente'),
+          h('button', { class: 'btn ghost', onclick: () => App.go(App.papel === 'corretor' ? '/carteira' : '/dashboard') }, 'Ir para o início')), 'alert'));
     }
+    document.querySelectorAll('.bottom-nav a').forEach(a => a.classList.toggle('active', a.dataset.key === navKey));
   };
+
+  /**
+   * Filtros no celular: em telas estreitas a barra de filtros mostra só a busca
+   * e um botão "Filtros (n)" que abre os demais campos.
+   */
+  function melhorarFiltros(root) {
+    root.querySelectorAll('.filters').forEach(f => {
+      const campos = Array.from(f.querySelectorAll(':scope > select, :scope > .more-filters > select, :scope > input:not(.search-f):not([type=search]):not([type=checkbox]), :scope > .check'));
+      if (campos.length < 2) { if (f._tg && f._tg.parentNode) f._tg.remove(); f.classList.remove('collapsible'); return; }
+      if (!f._tg) {
+        const lbl = h('span');
+        const tg = h('button', { class: 'btn sm filters-toggle', type: 'button', 'aria-expanded': 'false',
+          onclick: () => { const fechado = f.classList.toggle('collapsed'); tg.setAttribute('aria-expanded', String(!fechado)); } }, icon('filter', 14), lbl);
+        f._tg = tg; f.classList.add('collapsed');
+        f._pinta = () => {
+          const n = Array.from(f.querySelectorAll(':scope > select, :scope > .more-filters > select, :scope > input:not(.search-f):not([type=search]):not([type=checkbox]), :scope > .check input:checked'))
+            .filter(x => x.type === 'checkbox' || (x.value && !x.disabled)).length;
+          lbl.textContent = n ? `Filtros (${n})` : 'Filtros'; tg.classList.toggle('has', !!n);
+        };
+        f.addEventListener('change', () => f._pinta());
+      }
+      f.classList.add('collapsible');
+      if (f._tg.parentNode !== f) {
+        const busca = f.querySelector(':scope > .search-f, :scope > input[type=search], :scope > .seg');
+        f.insertBefore(f._tg, busca ? busca.nextSibling : f.firstChild);
+      }
+      f._pinta();
+    });
+  }
+  // telas que montam os filtros depois de carregar também recebem o botão
+  let filtrosPend = false;
+  const obsFiltros = new MutationObserver(() => {
+    if (filtrosPend) return; filtrosPend = true;
+    requestAnimationFrame(() => { filtrosPend = false; const c = document.getElementById('content'); if (c) melhorarFiltros(c); });
+  });
+  App.observarFiltros = el => obsFiltros.observe(el, { childList: true, subtree: true });
+  App.melhorarFiltros = melhorarFiltros;
   window.addEventListener('hashchange', () => { try { App.render(location.hash); } catch (e) { /* */ } });
 
   // ------------------------------------------------------------------

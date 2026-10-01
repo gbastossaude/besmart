@@ -29,7 +29,7 @@
       const c = f.situacao === 'atrasado' ? 'var(--bad)' : f.situacao === 'hoje' ? 'var(--warn)' : f.status === 'concluido' ? 'var(--ok)' : 'var(--blue)';
       return h('div', { class: 'list-item', style: { padding: '12px 14px' } }, h('span', { class: 'sev', style: { '--c': c } }),
         h('span', { class: 'notif-ic', style: { '--c': c } }, icon(FUI[f.tipo] || 'clock', 16)),
-        h('div', { style: { width: '120px', flex: 'none' } }, h('div', { class: 'mono', style: { fontWeight: 700, color: f.situacao === 'atrasado' ? '#FF8986' : 'var(--text)' } }, f.situacao === 'hoje' ? 'Hoje ' + fmt.time(f.agendado_para) : fmt.datetime(f.agendado_para)),
+        h('div', { style: { width: '120px', flex: 'none' } }, h('div', { class: 'mono', style: { fontWeight: 700, color: f.situacao === 'atrasado' ? 'var(--bad-text)' : 'var(--text)' } }, f.situacao === 'hoje' ? 'Hoje ' + fmt.time(f.agendado_para) : fmt.datetime(f.agendado_para)),
           h('div', { class: 'cell-sub' }, f.status === 'concluido' ? 'concluído ' + fmt.rel(f.concluido_em) : fmt.rel(f.agendado_para))),
         h('div', { class: 'li-main' }, h('div', { class: 'li-title' }, h('a', { href: f.lead_id ? '#/leads/' + f.lead_id : f.client_id ? '#/clientes/' + f.client_id : '#/followups' }, f.nome_contato || '—'), f.lead_temperatura ? h('span', { style: { marginLeft: '8px' } }, U.tempChip(f.lead_temperatura)) : null),
           h('div', { class: 'li-sub' }, [FUL[f.tipo], f.status === 'concluido' ? f.resultado : f.observacao, App.gestor() ? f.responsavel_nome : null].filter(Boolean).join(' · '))),

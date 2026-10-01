@@ -14,7 +14,7 @@ falhas = []
 ok = lambda c, m: print(('  ✓ ' if c else '  ✗ FALHOU: ') + m) or (None if c else falhas.append(m))
 
 with sync_playwright() as p:
-    b = p.chromium.launch()
+    b = p.chromium.launch(executable_path=os.environ.get('PW_CHROMIUM') or None)
     pg = b.new_page(viewport={'width': 1440, 'height': 900})
     pg.route('**/fonts.googleapis.com/**', lambda r: r.abort()); pg.route('**/fonts.gstatic.com/**', lambda r: r.abort()); pg.route('**/cdnjs.cloudflare.com/**', lambda r: r.abort())
     erros = []
@@ -115,7 +115,13 @@ with sync_playwright() as p:
             # v1.3: sem menu Propostas, sem valor total e CRM integrado à implantação
             ok(pg.locator('.nav-item[data-key="propostas"]').count() == 0, 'menu sem o item Propostas')
             t = abrir('vendas'); ok('valor total' not in t, 'vendas sem o valor total')
-            lid = pg.evaluate("(API._debug.T.leads.find(l => l.corretor_id === 'u-cor-ana' && !l.client_id && !l.deleted_at && l.operator_id && ['negociacao', 'proposta', 'cotacao', 'qualificacao'].includes(l.etapa)) || {}).id")
+            # os dados de exemplo dependem da data: se não houver lead pronto, completa um lead em aberto com a operadora
+            lid = pg.evaluate("""(() => { const T = API._debug.T;
+              let l = T.leads.find(l => l.corretor_id === 'u-cor-ana' && !l.client_id && !l.deleted_at && l.operator_id && ['negociacao', 'proposta', 'cotacao', 'qualificacao'].includes(l.etapa))
+                   || T.leads.find(l => l.corretor_id === 'u-cor-ana' && !l.client_id && !l.deleted_at && ['negociacao', 'proposta', 'cotacao', 'qualificacao', 'contato'].includes(l.etapa));
+              if (l && !l.operator_id) { const p = T.products.find(p => p.ativo); l.operator_id = p.operator_id; l.product_id = p.id; }
+              return l && l.id; })()""")
+            ok(bool(lid), 'lead em aberto da corretora para enviar à implantação')
             abrir('crm')
             pg.evaluate(f"API.get('v_leads', '{lid}').then(l => App.moveLead(l, 'aprovado', () => App.reload()))")
             pg.wait_for_selector('.modal:has-text("enviar para a implantação")', timeout=5000)

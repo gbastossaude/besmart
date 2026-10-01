@@ -27,7 +27,7 @@
         clear(box);
         if (!r.length) { box.hidden = true; return; }
         box.hidden = false;
-        box.appendChild(h('div', { class: 'bulkbar', style: { background: 'rgba(242,169,59,.1)', borderColor: 'rgba(242,169,59,.45)', color: '#F7C77A', flexDirection: 'column', alignItems: 'stretch', gap: '6px' } },
+        box.appendChild(h('div', { class: 'bulkbar', style: { background: 'rgba(242,169,59,.1)', borderColor: 'rgba(242,169,59,.45)', color: 'var(--warn-text)', flexDirection: 'column', alignItems: 'stretch', gap: '6px' } },
           h('div', { class: 'row' }, icon('alert', 16), 'Possível lead duplicado encontrado'),
           r.map(d => h('div', { class: 'row', style: { fontWeight: 600, color: 'var(--text-2)', fontSize: '12.5px' } },
             badge(d.tipo, d.tipo === 'lead' ? 'var(--blue-2)' : 'var(--ok)'),
@@ -305,7 +305,7 @@
       { name: 'inicio', label: 'Início', type: 'datetime-local', required: true },
       { name: 'fim', label: 'Fim', type: 'datetime-local' },
       { name: 'local', label: 'Local' },
-      { name: 'link_reuniao', label: 'Link da reunião', placeholder: 'https://meet.google.com/…' },
+      { name: 'link_reuniao', label: 'Link da reunião', type: 'url', inputmode: 'url', placeholder: 'https://meet.google.com/…', hint: 'Google Meet, Zoom, Teams… (começa com https://)' },
       ...(leadF ? [{ ...leadF, span: 2 }] : []),
       ...(App.gestor() ? [{ name: 'responsavel_id', label: 'Responsável', type: 'select', options: [{ value: App.me.id, label: App.me.nome + ' (eu)' }, ...App.opt.corretores()] }] : []),
       { name: 'descricao', label: 'Pauta / descrição', type: 'textarea', rows: 2, span: 2 },
@@ -318,6 +318,7 @@
       h('span', { class: 'grow' }), cancel(null), btnSave('Salvar', async () => {
         if (!f.validate()) return; const v = f.values();
         if (v.fim && v.inicio && v.fim < v.inicio) return toast('O fim precisa ser depois do início', 'err');
+        if (v.link_reuniao) v.link_reuniao = U.safeUrl(v.link_reuniao);
         const row = { titulo: v.titulo, tipo: v.tipo, local: v.local, link_reuniao: v.link_reuniao, lembrete_min: Number(v.lembrete_min || 0), convidados_externos: v.convidados_externos, inicio: v.inicio, fim: v.fim, descricao: v.descricao, responsavel_id: v.responsavel_id || App.me.id };
         let ev;
         if (existing) ev = await API.update('events', existing.id, row); else ev = await API.insert('events', { ...row, lead_id: v.lead_id || target.lead_id || null, client_id: target.client_id || null });
@@ -375,7 +376,7 @@
         e.lembrete_min > 0 ? badge('Lembrete ' + (LEMBRETES.find(l => l.value === e.lembrete_min) || { label: e.lembrete_min + ' min antes' }).label.toLowerCase(), 'var(--muted)') : badge('Sem lembrete', 'var(--muted)'),
         new Date(e.inicio) < new Date() ? badge('Encerrado', 'var(--muted)', 'dot') : null),
       row('clock', 'Quando', quando), row('pin', 'Local', e.local),
-      e.link_reuniao ? row('external', 'Link da reunião', h('a', { href: e.link_reuniao, target: '_blank', rel: 'noopener' }, e.link_reuniao)) : null,
+      U.safeUrl(e.link_reuniao) ? row('external', 'Link da reunião', h('a', { href: U.safeUrl(e.link_reuniao), target: '_blank', rel: 'noopener noreferrer' }, e.link_reuniao)) : null,
       row('user', 'Organizador', e.organizador_nome || e.responsavel_nome), row('leads', 'Vínculo', e.nome_contato ? h('a', { href: e.lead_id ? '#/leads/' + e.lead_id : '#/clientes/' + e.client_id }, e.nome_contato) : null),
       e.descricao ? h('div', { class: 'card', style: { padding: '10px 12px', whiteSpace: 'pre-wrap' } }, e.descricao) : null,
       e.minha_resposta ? h('div', { class: 'invite-box' }, h('div', { class: 'grow' }, h('b', null, 'Você foi convidado'), h('div', { class: 'cell-sub' }, 'Sua resposta: ' + RESP[e.minha_resposta][0])),
@@ -389,7 +390,7 @@
       e.convidados_externos ? row('mail', 'Convidados externos', e.convidados_externos) : null);
     const shareBtn = h('button', { class: 'btn', onclick: ev => shareEvent(e, ev.currentTarget) }, icon('external', 15), 'Compartilhar convite');
     const d = U.drawer({ title: e.titulo, subtitle: 'Agenda', size: 'md', body, footer: [shareBtn, h('span', { class: 'grow' }),
-      e.link_reuniao ? h('a', { class: 'btn', href: e.link_reuniao, target: '_blank', rel: 'noopener' }, 'Entrar na reunião') : null,
+      U.safeUrl(e.link_reuniao) ? h('a', { class: 'btn', href: U.safeUrl(e.link_reuniao), target: '_blank', rel: 'noopener noreferrer' }, icon('external', 15), 'Entrar na reunião') : null,
       podeEditar ? h('button', { class: 'btn primary', onclick: () => { d.close(); event({}, { existing: e, onDone }); } }, icon('edit', 15), 'Editar e convidar') : null] });
   }
 

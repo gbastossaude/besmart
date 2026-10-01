@@ -4102,7 +4102,7 @@ select e.*, private.nome_usuario(e.usuario_id) as usuario_nome from public.imple
 
 create view public.v_pendencies with (security_invoker = true) as
 select pe.*, coalesce(cl.nome, l.nome) as nome_contato, private.nome_usuario(pe.corretor_id) as corretor_nome,
-       (pe.status = 'aberta' and pe.prazo < current_date) as atrasada
+       (pe.status = 'aberta' and pe.prazo < private.hoje_sp()) as atrasada
   from public.pendencies pe
   left join public.clients cl on cl.id = pe.client_id
   left join public.leads l on l.id = pe.lead_id
@@ -4219,7 +4219,7 @@ select c.id, c.nome, c.tipo_pessoa, c.razao_social, c.whatsapp, c.telefone, c.em
        c.corretor_id, c.supervisor_id, c.gerente_id, c.team_id, c.created_at, c.lembrete_contato_em, c.aniversario_avisado_em,
        private.nome_usuario(c.corretor_id) as corretor_nome, o.nome as operadora_nome, p.nome as produto_nome,
        u.ultimo_contato_em,
-       (private.hoje_sp() - coalesce(u.ultimo_contato_em, c.created_at)::date) as dias_sem_contato,
+       (private.hoje_sp() - (coalesce(u.ultimo_contato_em, c.created_at) at time zone 'America/Sao_Paulo')::date) as dias_sem_contato,
        private.proximo_aniversario(c.data_nascimento, private.hoje_sp()) as proximo_aniversario,
        (private.proximo_aniversario(c.data_nascimento, private.hoje_sp()) - private.hoje_sp()) as dias_para_aniversario,
        case when c.data_nascimento is not null then extract(year from age(private.proximo_aniversario(c.data_nascimento, private.hoje_sp()), c.data_nascimento))::int end as idade_no_aniversario
@@ -4410,7 +4410,7 @@ begin
   if coalesce((cfg->>'contato')::boolean, true) then
     for c in select * from (
                select cl.id, cl.nome, cl.corretor_id,
-                      (v_hoje - coalesce((select max(a.realizado_em) from public.activities a where a.client_id = cl.id and a.deleted_at is null and a.efetivo), cl.created_at)::date) as dias,
+                      (v_hoje - (coalesce((select max(a.realizado_em) from public.activities a where a.client_id = cl.id and a.deleted_at is null and a.efetivo), cl.created_at) at time zone 'America/Sao_Paulo')::date) as dias,
                       row_number() over (partition by cl.corretor_id order by coalesce((select max(a.realizado_em) from public.activities a where a.client_id = cl.id and a.deleted_at is null and a.efetivo), cl.created_at)) as ordem
                  from public.clients cl
                 where cl.deleted_at is null and cl.corretor_id is not null and cl.status in ('ativo','renovacao','migracao','inadimplente') and cl.anonimizado_em is null
@@ -4836,7 +4836,7 @@ begin
       p_dados->>'cep', p_dados->>'endereco', p_dados->>'numero', p_dados->>'complemento', p_dados->>'bairro',
       coalesce(p_dados->>'cidade', l.cidade), coalesce(p_dados->>'uf', l.uf), l.id,
       coalesce((p_dados->>'operator_id')::uuid, l.operator_id), coalesce((p_dados->>'product_id')::uuid, l.product_id),
-      coalesce((p_dados->>'num_vidas')::int, l.num_vidas), coalesce((p_dados->>'data_venda')::date, current_date),
+      coalesce((p_dados->>'num_vidas')::int, l.num_vidas), coalesce((p_dados->>'data_venda')::date, private.hoje_sp()),
       (p_dados->>'vigencia')::date,
       coalesce((p_dados->>'valor_mensal')::numeric, l.valor_cotacao, l.valor_pretendido, 0),
       p_dados->>'numero_proposta',
@@ -4857,7 +4857,7 @@ begin
   values (v_cli, l.id, coalesce((p_dados->>'operator_id')::uuid, l.operator_id), coalesce((p_dados->>'product_id')::uuid, l.product_id),
           coalesce(p_dados->>'tipo_plano', l.modalidade), coalesce((p_dados->>'num_vidas')::int, l.num_vidas),
           coalesce((p_dados->>'valor_mensal')::numeric, l.valor_cotacao, l.valor_pretendido, 0), p_dados->>'numero_proposta',
-          coalesce((p_dados->>'data_venda')::date, current_date), (p_dados->>'vigencia')::date, l.source_id, l.campaign_id,
+          coalesce((p_dados->>'data_venda')::date, private.hoje_sp()), (p_dados->>'vigencia')::date, l.source_id, l.campaign_id,
           v_status, l.corretor_id, l.supervisor_id, l.gerente_id)
   returning id into v_sale;
 
@@ -5189,3 +5189,54 @@ grant execute on function
   public.registrar_presenca(text, text), public.registrar_saida(), public.processar_alertas_rapidos(),
   public.ranking_comercial(date, date), public.executar_lembretes_relacionamento()
 to authenticated;
+
+
+-- =====================================================================
+--  ATOS SISTEMA — 09_atualizacao_v1_4.sql
+--  Correções e reforços da v1.4. Pode ser executado várias vezes.
+--   • datas "de hoje" no fuso de São Paulo (o banco roda em UTC: entre
+--     21h e 0h uma venda/implantação ficava com a data do dia seguinte)
+--   • link de reunião aceita somente http(s) — bloqueia javascript: e afins
+--   • índices para as consultas de relacionamento e comissões
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- Datas no fuso de São Paulo
+-- ---------------------------------------------------------------------
+alter table public.sales alter column data_venda set default private.hoje_sp();
+
+create or replace function private.tg_venda_antes()
+returns trigger language plpgsql as $$
+begin
+  if tg_op = 'INSERT' or new.status is distinct from old.status then
+    new.status_desde := now();
+    if new.status = 'cancelada' then new.cancelada_em := coalesce(new.cancelada_em, now()); end if;
+    if new.status = 'implantada' then new.data_implantacao := coalesce(new.data_implantacao, private.hoje_sp()); end if;
+  end if;
+  if new.valor_total is null then new.valor_total := new.valor_mensal * 12; end if;
+  new.numero_proposta := nullif(trim(new.numero_proposta), '');
+  return new;
+end $$;
+
+-- ---------------------------------------------------------------------
+-- Link da reunião: somente http:// ou https://
+-- (um link "javascript:..." executaria código na sessão de quem clicasse)
+-- ---------------------------------------------------------------------
+update public.events
+   set link_reuniao = null
+ where link_reuniao is not null and link_reuniao !~* '^https?://[^\s]+$';
+update public.events set link_reuniao = nullif(trim(link_reuniao), '') where link_reuniao is not null;
+
+alter table public.events drop constraint if exists events_link_reuniao_http;
+alter table public.events add constraint events_link_reuniao_http
+  check (link_reuniao is null or (link_reuniao ~* '^https?://[^\s]+$' and length(link_reuniao) <= 2000));
+
+-- ---------------------------------------------------------------------
+-- Índices
+-- ---------------------------------------------------------------------
+-- último contato do cliente (Relacionamento, Minha carteira, lembretes diários)
+create index if not exists activities_client_idx on public.activities(client_id, realizado_em desc)
+  where deleted_at is null and efetivo;
+create index if not exists followups_client_idx on public.followups(client_id) where client_id is not null;
+create index if not exists commissions_corretor_idx on public.commissions(corretor_id, data_prevista) where deleted_at is null;
+create index if not exists events_criador_idx on public.events(created_by, inicio);

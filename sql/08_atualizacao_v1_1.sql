@@ -987,7 +987,7 @@ select e.*, private.nome_usuario(e.usuario_id) as usuario_nome from public.imple
 
 create view public.v_pendencies with (security_invoker = true) as
 select pe.*, coalesce(cl.nome, l.nome) as nome_contato, private.nome_usuario(pe.corretor_id) as corretor_nome,
-       (pe.status = 'aberta' and pe.prazo < current_date) as atrasada
+       (pe.status = 'aberta' and pe.prazo < private.hoje_sp()) as atrasada
   from public.pendencies pe
   left join public.clients cl on cl.id = pe.client_id
   left join public.leads l on l.id = pe.lead_id
@@ -1104,7 +1104,7 @@ select c.id, c.nome, c.tipo_pessoa, c.razao_social, c.whatsapp, c.telefone, c.em
        c.corretor_id, c.supervisor_id, c.gerente_id, c.team_id, c.created_at, c.lembrete_contato_em, c.aniversario_avisado_em,
        private.nome_usuario(c.corretor_id) as corretor_nome, o.nome as operadora_nome, p.nome as produto_nome,
        u.ultimo_contato_em,
-       (private.hoje_sp() - coalesce(u.ultimo_contato_em, c.created_at)::date) as dias_sem_contato,
+       (private.hoje_sp() - (coalesce(u.ultimo_contato_em, c.created_at) at time zone 'America/Sao_Paulo')::date) as dias_sem_contato,
        private.proximo_aniversario(c.data_nascimento, private.hoje_sp()) as proximo_aniversario,
        (private.proximo_aniversario(c.data_nascimento, private.hoje_sp()) - private.hoje_sp()) as dias_para_aniversario,
        case when c.data_nascimento is not null then extract(year from age(private.proximo_aniversario(c.data_nascimento, private.hoje_sp()), c.data_nascimento))::int end as idade_no_aniversario
@@ -1295,7 +1295,7 @@ begin
   if coalesce((cfg->>'contato')::boolean, true) then
     for c in select * from (
                select cl.id, cl.nome, cl.corretor_id,
-                      (v_hoje - coalesce((select max(a.realizado_em) from public.activities a where a.client_id = cl.id and a.deleted_at is null and a.efetivo), cl.created_at)::date) as dias,
+                      (v_hoje - (coalesce((select max(a.realizado_em) from public.activities a where a.client_id = cl.id and a.deleted_at is null and a.efetivo), cl.created_at) at time zone 'America/Sao_Paulo')::date) as dias,
                       row_number() over (partition by cl.corretor_id order by coalesce((select max(a.realizado_em) from public.activities a where a.client_id = cl.id and a.deleted_at is null and a.efetivo), cl.created_at)) as ordem
                  from public.clients cl
                 where cl.deleted_at is null and cl.corretor_id is not null and cl.status in ('ativo','renovacao','migracao','inadimplente') and cl.anonimizado_em is null
@@ -1721,7 +1721,7 @@ begin
       p_dados->>'cep', p_dados->>'endereco', p_dados->>'numero', p_dados->>'complemento', p_dados->>'bairro',
       coalesce(p_dados->>'cidade', l.cidade), coalesce(p_dados->>'uf', l.uf), l.id,
       coalesce((p_dados->>'operator_id')::uuid, l.operator_id), coalesce((p_dados->>'product_id')::uuid, l.product_id),
-      coalesce((p_dados->>'num_vidas')::int, l.num_vidas), coalesce((p_dados->>'data_venda')::date, current_date),
+      coalesce((p_dados->>'num_vidas')::int, l.num_vidas), coalesce((p_dados->>'data_venda')::date, private.hoje_sp()),
       (p_dados->>'vigencia')::date,
       coalesce((p_dados->>'valor_mensal')::numeric, l.valor_cotacao, l.valor_pretendido, 0),
       p_dados->>'numero_proposta',
@@ -1742,7 +1742,7 @@ begin
   values (v_cli, l.id, coalesce((p_dados->>'operator_id')::uuid, l.operator_id), coalesce((p_dados->>'product_id')::uuid, l.product_id),
           coalesce(p_dados->>'tipo_plano', l.modalidade), coalesce((p_dados->>'num_vidas')::int, l.num_vidas),
           coalesce((p_dados->>'valor_mensal')::numeric, l.valor_cotacao, l.valor_pretendido, 0), p_dados->>'numero_proposta',
-          coalesce((p_dados->>'data_venda')::date, current_date), (p_dados->>'vigencia')::date, l.source_id, l.campaign_id,
+          coalesce((p_dados->>'data_venda')::date, private.hoje_sp()), (p_dados->>'vigencia')::date, l.source_id, l.campaign_id,
           v_status, l.corretor_id, l.supervisor_id, l.gerente_id)
   returning id into v_sale;
 

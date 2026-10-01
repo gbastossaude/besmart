@@ -8,5 +8,5 @@ cd "$(dirname "$0")"
   echo "--  (pode ser executado novamente sem perder dados)."
   echo "--  Depois rode o 07_supabase_storage_cron.sql."
   echo "-- ====================================================================="
-  for f in sql/0[1-6]_*.sql sql/08_*.sql; do [ -f "$f" ] && { echo; echo; cat "$f"; }; done
+  for f in sql/0[1-6]_*.sql sql/08_*.sql sql/09_*.sql; do [ -f "$f" ] && { echo; echo; cat "$f"; }; done
 } > sql/atos_completo.sql
