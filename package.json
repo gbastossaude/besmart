@@ -15,8 +15,11 @@
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
+    "axe-core": "^4.13.0",
     "eslint": "^10.1.0",
     "globals": "^16.0.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

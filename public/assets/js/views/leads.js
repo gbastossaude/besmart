@@ -36,7 +36,7 @@ function viewLeads(){
 function cardLead(l){
   const dias = diasEntre(l.ultimoContato||l.criadoEm||hoje(), hoje());
   const t = { quente:"🔥", morno:"🌡️", frio:"❄️" }[l.temperatura] || "";
-  return `<article class="lead ${esc(l.pilar)}" draggable="true" data-lead="${esc(l.id)}" tabindex="0" role="button">
+  return `<article class="lead ${esc(l.pilar)}" draggable="true" data-lead="${esc(l.id)}" tabindex="0" aria-label="${esc(l.nome)} — Enter abre o lead">
     <button class="del" data-act="excluirLead" data-id="${esc(l.id)}" title="Excluir lead" aria-label="Excluir ${esc(l.nome)}">×</button>
     <b>${esc(l.nome)}</b>
     ${l.empresa?`<div class="org">${esc(l.empresa)}</div>`:""}

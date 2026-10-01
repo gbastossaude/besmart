@@ -185,7 +185,7 @@ function cardCliente(c){
   const venc = cs.filter(x=>x.fim && x.fim<=addDays(hoje(),60) && x.fim>=hoje())
                  .sort((a,b)=>a.fim.localeCompare(b.fim))[0];
   const principal = pilares[0] || "saude";
-  return `<article class="lead ${esc(principal)}" draggable="true" data-cliente="${esc(c.id)}" tabindex="0" role="button">
+  return `<article class="lead ${esc(principal)}" draggable="true" data-cliente="${esc(c.id)}" tabindex="0" aria-label="${esc(c.nome)} — Enter abre a ficha">
     ${podeExcluirCarteira()?`<button class="del" data-act="excluirCliente" data-id="${esc(c.id)}" title="Excluir cliente" aria-label="Excluir ${esc(c.nome)}">×</button>`:""}
     <b>${esc(c.nome)}</b>
     <div class="org">${esc(c.tipo||"PJ")} · ${cs.length} contrato${cs.length!==1?"s":""}</div>

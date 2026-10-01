@@ -19,9 +19,11 @@ img{max-width:100%}
 :root{
   --bg:#F7F6F1; --surface:#FFFFFF; --surface-2:#FBFAF7; --surface-3:#F1EFE8;
   --line:#E9E7E0; --line-strong:#D3D0C6;
-  --ink:#0E1110; --ink-2:#3B403E; --ink-3:#7E837F;
+  --ink:#0E1110; --ink-2:#3B403E; --ink-3:#646A66;
   --accent:#1B7F4E; --accent-deep:#13603B; --accent-soft:#E4EFE9;
   --gold:#8A6A12; --gold-brand:#F1E1A0; --gold-soft:#F6F0DC;
+  --ok-ink:#13603B; --gold-ink:#735A0F;
+  --accent-bg:#1B7F4E; --accent-bg-2:#13603B; /* fundo de botão/realce com texto branco (AA nos dois temas) */
   --c-saude:#1B7F4E; --c-seguros:#B8840C; --c-consorcios:#1D5FA6;
   --c-receita:#1B7F4E; --c-despesa:#7A4E96; --despesa-soft:#F0E9F5;
   --ok:#1B7F4E; --ok-soft:#E4EFE9;
@@ -38,11 +40,12 @@ img{max-width:100%}
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
   --bg:#0E1110; --surface:#161A18; --surface-2:#1C211F; --surface-3:#232826;
   --line:#272C2A; --line-strong:#3B403E;
-  --ink:#F7F6F1; --ink-2:#A8AEA9; --ink-3:#7E847F;
+  --ink:#F7F6F1; --ink-2:#A8AEA9; --ink-3:#959B96;
   --accent:#2FA36A; --accent-deep:#3CB578; --accent-soft:#12271D;
   --gold:#F1E1A0; --gold-brand:#F1E1A0; --gold-soft:#2C2716;
+  --ok-ink:#2FA36A; --gold-ink:#F1E1A0;
   --c-saude:#2FA36A; --c-seguros:#B8861A; --c-consorcios:#4F8FD6;
-  --c-receita:#2FA36A; --c-despesa:#A76FC0; --despesa-soft:#291E31;
+  --c-receita:#2FA36A; --c-despesa:#B987CF; --despesa-soft:#291E31;
   --ok:#2FA36A; --ok-soft:#12271D;
   --warn:#D8B64A; --warn-soft:#2C2716;
   --crit:#DE8375; --crit-soft:#341E1A;
@@ -53,11 +56,12 @@ img{max-width:100%}
 :root[data-theme="dark"]{
   --bg:#0E1110; --surface:#161A18; --surface-2:#1C211F; --surface-3:#232826;
   --line:#272C2A; --line-strong:#3B403E;
-  --ink:#F7F6F1; --ink-2:#A8AEA9; --ink-3:#7E847F;
+  --ink:#F7F6F1; --ink-2:#A8AEA9; --ink-3:#959B96;
   --accent:#2FA36A; --accent-deep:#3CB578; --accent-soft:#12271D;
   --gold:#F1E1A0; --gold-brand:#F1E1A0; --gold-soft:#2C2716;
+  --ok-ink:#2FA36A; --gold-ink:#F1E1A0;
   --c-saude:#2FA36A; --c-seguros:#B8861A; --c-consorcios:#4F8FD6;
-  --c-receita:#2FA36A; --c-despesa:#A76FC0; --despesa-soft:#291E31;
+  --c-receita:#2FA36A; --c-despesa:#B987CF; --despesa-soft:#291E31;
   --ok:#2FA36A; --ok-soft:#12271D;
   --warn:#D8B64A; --warn-soft:#2C2716;
   --crit:#DE8375; --crit-soft:#341E1A;
@@ -91,13 +95,13 @@ a{color:var(--accent-deep)}
 .nav-sec{font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--rail-ink-2);padding:14px 8px 5px}
 .nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:8px 9px;background:none;border:0;border-radius:8px;color:var(--rail-ink-2);cursor:pointer;text-align:left;font-size:13.5px;font-weight:500}
 .nav-btn:hover{background:rgba(255,255,255,.055);color:var(--rail-ink)}
-.nav-btn[aria-current="true"]{background:var(--accent);color:#fff;font-weight:600}
+.nav-btn[aria-current="true"]{background:var(--accent-bg);color:#fff;font-weight:600}
 .nav-btn svg{flex:none;opacity:.9}
 .nav-badge{margin-left:auto;flex:none;align-self:center;display:inline-block;min-width:21px;height:17px;line-height:17px;text-align:center;font-family:var(--mono);font-size:10.5px;background:rgba(255,255,255,.1);padding:0 6px;border-radius:99px;color:var(--rail-ink)}
 .nav-btn[aria-current="true"] .nav-badge{background:rgba(0,0,0,.22)}
 .nav-badge.urgente{background:var(--crit);color:#fff}
 #rail-foot{border-top:1px solid var(--rail-line);padding:11px 14px;display:flex;align-items:center;gap:9px}
-.avatar{width:29px;height:29px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:11.5px;flex:none}
+.avatar{width:29px;height:29px;border-radius:50%;background:var(--accent-bg);color:#fff;display:grid;place-items:center;font-weight:700;font-size:11.5px;flex:none}
 .rail-user{min-width:0;flex:1}
 .rail-user b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rail-user span{font-size:10.5px;color:var(--rail-ink-2);text-transform:capitalize}
@@ -114,8 +118,8 @@ a{color:var(--accent-deep)}
 /* ---------- controls ---------- */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .btn:hover{border-color:var(--ink-3)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+.btn.primary{background:var(--accent-bg);border-color:var(--accent-bg);color:#fff}
+.btn.primary:hover{background:var(--accent-bg-2);border-color:var(--accent-bg-2)}
 .btn.ghost{background:transparent;border-color:transparent;color:var(--ink-2)}
 .btn.ghost:hover{background:var(--surface-3);color:var(--ink)}
 .btn.sm{padding:4px 9px;font-size:12px;border-radius:7px}
@@ -174,10 +178,10 @@ td.r,th.r{text-align:right}
 /* Um chip por pilar. O fundo acompanha a cor do pilar; o texto do pilar
    Proteção usa o ocre (--gold), porque o amarelo da marca não tem contraste
    suficiente para texto sobre fundo claro. */
-.chip.saude{background:var(--accent-soft);color:var(--c-saude)}
-.chip.seguros{background:var(--gold-soft);color:var(--gold)}
+.chip.saude{background:var(--accent-soft);color:var(--ok-ink)}
+.chip.seguros{background:var(--gold-soft);color:var(--gold-ink)}
 .chip.consorcios{background:var(--info-soft);color:var(--c-consorcios)}
-.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.ok{background:var(--ok-soft);color:var(--ok-ink)}
 .chip.warn{background:var(--warn-soft);color:var(--warn)}
 .chip.crit{background:var(--crit-soft);color:var(--crit)}
 .chip.info{background:var(--info-soft);color:var(--info)}
@@ -340,7 +344,7 @@ details.tblview[open] summary:before{content:"▾ ";}
 [data-marca] svg{width:100%;height:100%;display:block}
 .marca-amostras{display:flex;gap:10px;flex-wrap:wrap}
 .marca-amostra{border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:11px;min-height:104px}
-.marca-amostra.claro{background:#FFFFFF;color:#7E837F}
+.marca-amostra.claro{background:#FFFFFF;color:#646A66}
 .marca-amostra.escuro{background:#0E1110;border-color:#0E1110;color:#A8AEA9}
 .marca-amostra svg{display:block;width:100%;height:auto}
 .prev-rolagem{overflow-x:auto;-webkit-overflow-scrolling:touch}
