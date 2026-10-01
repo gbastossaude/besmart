@@ -76,7 +76,7 @@ export const test = base.extend({
       const semente = opcoes.semente || carteira(opcoes);
       if (quem) semente.sessionUserId = IDS[quem];
       await page.route("**/vendor/supabase.js", r => r.fulfill({ contentType: "text/javascript", body: FAKE }));
-      await page.route("**/config.js", r => r.fulfill({ contentType: "text/javascript", body: 'window.ERBE_CONFIG={url:"https://fake.supabase.co",anonKey:"anon-fake"};' }));
+      await page.route(u => new URL(u).pathname === "/config.js", r => r.fulfill({ contentType: "text/javascript", body: 'window.ERBE_CONFIG={url:"https://fake.supabase.co",anonKey:"anon-fake"};' }));
       await page.addInitScript(s => { window.__FAKE_DB__ = s; try { localStorage.setItem("erbe-lembrete-soneca", new Date(Date.now() + 864e5).toISOString()); } catch (e) {} }, semente);
       await page.goto("/");
       if (quem && quem !== "pendente") await expect(page.locator("#app")).toBeVisible();
