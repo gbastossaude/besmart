@@ -1,0 +1,22 @@
+{
+  "name": "erbe-central",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Erbe · Central — gestão de corretora (saúde, proteção e patrimônio) sobre Supabase + Netlify",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test tests/unit/",
+    "test:e2e": "playwright test",
+    "test:db": "bash scripts/test-db.sh",
+    "lint": "eslint public/assets/js public/sw.js scripts tests",
+    "schema": "node scripts/build-schema.mjs",
+    "check": "npm run lint && npm run schema -- --check && npm test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "eslint": "^10.1.0",
+    "globals": "^16.0.0"
+  },
+  "engines": { "node": ">=20" }
+}

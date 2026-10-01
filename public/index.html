@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E1110">
+<title>Erbe · Central</title>
+<meta name="description" content="Erbe Proteção e Patrimônio — carteira, comissionamento e agenda.">
+<!-- Sistema interno: não deve aparecer em buscadores. -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<link rel="preload" href="assets/fonts/sora-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/app.css">
+<!-- config.js traz o endereço e a chave PÚBLICA (anon) do Supabase. Precisa vir antes do código. -->
+<script src="config.js"></script>
+<!-- supabase-js servido do próprio site (vendor/): sem dependência de CDN de terceiros. -->
+<script src="vendor/supabase.js"></script>
+</head>
+<body>
+<noscript><div class="noscript">O Erbe · Central precisa de JavaScript ligado para funcionar.</div></noscript>
+
+<div id="carregando" role="status" aria-live="polite">
+  <div class="carregando-cx"><span class="spinner" aria-hidden="true"></span><span>Carregando o Erbe · Central…</span></div>
+</div>
+<div id="login" hidden></div>
+<div id="app" hidden>
+  <aside id="rail">
+    <div class="brand">
+      <div id="marcaSimbolo" data-marca aria-hidden="true"></div>
+      <div>
+        <div class="brand-name">ERBE</div>
+        <div class="brand-sub">Proteção e Patrimônio</div>
+      </div>
+    </div>
+    <nav id="nav" aria-label="Navegação principal"></nav>
+    <div id="rail-foot">
+      <div class="avatar" id="meAv" aria-hidden="true">—</div>
+      <div class="rail-user"><b id="meName">Carregando…</b><span id="meRole"></span></div>
+      <button class="icon-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+      <button class="icon-btn" data-act="sair" title="Sair da conta" aria-label="Sair da conta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+    </div>
+  </aside>
+  <main id="main">
+    <div id="banner" role="alert" hidden></div>
+    <header id="topbar">
+      <div><h1 id="pageTitle">Painel</h1><div class="sub" id="pageSub"></div></div>
+      <div class="topbar-actions" id="pageActions"></div>
+    </header>
+    <div id="view"></div>
+  </main>
+</div>
+<div id="scrim"><div id="modal" role="dialog" aria-modal="true"></div></div>
+<div id="scrim2"><div id="dialogo" role="dialog" aria-modal="true"></div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="lembrete" role="status" aria-live="polite"></div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

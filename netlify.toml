@@ -1,0 +1,38 @@
+# Erbe · Central — publicação no Netlify
+# Site estático: não há build, o Netlify só serve os arquivos da pasta.
+
+[build]
+  publish = "."
+  command = ""
+
+# O sistema é de página única: qualquer caminho cai no index.html.
+# Isso faz o link de acesso enviado por e-mail voltar para o lugar certo.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+# config.js muda quando você troca de projeto no Supabase: não deixe em cache.
+[[headers]]
+  for = "/config.js"
+  [headers.values]
+    Cache-Control = "no-store"
+
+# Bibliotecas do PDF e a fonte Sora: não mudam entre versões, podem ficar em cache.
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
