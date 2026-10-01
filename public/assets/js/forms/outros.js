@@ -33,12 +33,12 @@ async function salvarTarefa(refJson, id){
   const dados = { titulo, tipo:val("tTipo"), vence:val("tVence")||hoje(),
                   responsavel:val("tResp"), obs:val("tObs") };
   if(antiga){
-    await salvar("tarefas", Object.assign({}, antiga, dados), "Editou a tarefa");
+    if(!await salvar("tarefas", Object.assign({}, antiga, dados), "Editou a tarefa")) return;
     fecharModal(); toast("Tarefa atualizada"); return;
   }
-  await salvar("tarefas", Object.assign({
+  if(!await salvar("tarefas", Object.assign({
     id:uid("tar"), status:"aberta", criadoEm:hoje()
-  }, dados, ref));
+  }, dados, ref))) return;
   fecharModal(); toast("Tarefa criada");
 }
 /** Prorrogar: soma dias à data que a tarefa já tem, nunca para uma data no passado. */

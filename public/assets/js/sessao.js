@@ -128,6 +128,9 @@ async function carregarTudo(){
   ]);
   // Tabela que falhou mantém o que já estava na tela: nunca troca dado bom por lista vazia.
   if(config && config.dados) S.config = Object.assign(clonar(DEFAULT_CONFIG), clonar(config.dados));
+  const versoes = (col, linhas) => { if(linhas) linhas.forEach(l=>lembrarVersao(col, l)); };
+  versoes("leads", leads); versoes("clientes", clientes); versoes("contratos", contratos);
+  versoes("tarefas", tarefas); versoes("despesas", despesas); versoes("vidas", vidas);
   if(leads) S.leads = leads.map(deLinha);
   if(clientes) S.clientes = clientes.map(deLinha);
   if(contratos) S.contratos = contratos.map(deLinha);
@@ -168,9 +171,14 @@ function aplicarMudanca(tabela, p){
       const antes = S[tabela].length;
       S[tabela] = S[tabela].filter(x=>x.id!==id);
       SOMBRA.delete(tabela+":"+id);
+      VERSOES.delete(tabela+":"+id);
       return S[tabela].length !== antes;
     }
     const linha = p.new; if(!linha || !linha.id) return false;
+    // eco atrasado de uma gravação já superada (versão menor que a conhecida): ignora
+    const conhecida = VERSOES.get(tabela+":"+linha.id);
+    if(conhecida!=null && Number(linha.versao) < conhecida) return false;
+    lembrarVersao(tabela, linha);
     const obj = deLinha(linha);
     const i = S[tabela].findIndex(x=>x.id===obj.id);
     if(i<0) S[tabela].push(obj); else S[tabela][i] = obj;

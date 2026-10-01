@@ -21,7 +21,7 @@ function viewTarefas(){
       <div class="panel-head"><span class="chip ${g.cls}">${esc(g.rot)}</span><div><h3>${g.ts.length} tarefa${g.ts.length!==1?"s":""}</h3></div></div>
       <div class="tw"><table><tbody>${g.ts.map(t=>`<tr>
         <td style="width:34px"><button class="btn sm ghost" data-act="concluirTarefa" data-id="${esc(t.id)}" title="Concluir" aria-label="Concluir tarefa">○</button></td>
-        <td><b>${esc(t.titulo)}</b>${t.refNome?`<div class="hint">${esc(t.refNome)}</div>`:""}${t.adiada?`<div class="hint">adiada ${t.adiada}x</div>`:""}</td>
+        <td><b>${esc(t.titulo)}</b>${t.auto?` <span class="chip info" title="Criada pelo sistema">automática</span>`:""}${t.refNome?`<div class="hint">${esc(t.refNome)}</div>`:""}${t.adiada?`<div class="hint">adiada ${t.adiada}x</div>`:""}</td>
         <td><span class="chip mute">${esc(t.tipo||"Follow-up")}</span></td>
         <td class="num">${dt(t.vence)}</td>
         <td>${esc(nomeUsuario(t.responsavel))}</td>

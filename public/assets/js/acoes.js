@@ -30,6 +30,14 @@ async function executarAcao(a, id, el, e){
     case "historico": await abrirHistorico(el.dataset.tabela, id, el.dataset.titulo); break;
     case "restaurarExcluido": await restaurarExcluido(id); break;
     case "transferirCarteira": await transferirCarteira(id); break;
+    case "rodarAutomacoes": {
+      const { data, error } = await S.db.rpc("gerar_tarefas_automaticas");
+      if(error){ if(/does not exist|não existe/i.test(error.message)) toast("Aplique a migration 0004 no Supabase para ativar as automações."); else falhaEscrita(error); break; }
+      const n = (Number(data && data.propostas_paradas)||0) + (Number(data && data.renovacoes)||0);
+      toast(n ? `${n} tarefa(s) automática(s) criada(s)` : "Nada novo: as automações já estavam em dia");
+      if(n) await carregarTudo();
+      break;
+    }
     case "fecharMenu": fecharMenu(); break;
     case "instalarApp": await instalarApp(); break;
     case "fechar": fecharModal(); break;
@@ -603,15 +611,17 @@ async function executarAcao(a, id, el, e){
       let dados;
       try{ dados = JSON.parse(val("impTxt")); }
       catch(err){ toast("O conteúdo não é um JSON válido."); break; }
-      let n = 0;
+      // em lotes de 500 (antes: uma requisição por registro — milhares para um backup grande)
+      let n = 0, falhas = 0;
       for(const col of ["clientes","contratos","vidas","leads","tarefas","despesas"]){
-        for(const item of (dados[col]||[])){
-          if(!item || !item.id) continue;
-          const { error } = await S.db.from(col)
-            .upsert({ id:item.id, dono:donoDe(col,item), dados:item }, { onConflict:"id" });
-          if(!error) n++;
+        const itens = (dados[col]||[]).filter(it=>it && it.id).map(it=>({ id:it.id, dono:donoDe(col,it), dados:it }));
+        for(let i=0; i<itens.length; i+=500){
+          const lote = itens.slice(i, i+500);
+          const { error } = await S.db.from(col).upsert(lote, { onConflict:"id" });
+          if(error){ falhas += lote.length; registrarErro(error, { operacao:"importar "+col }); } else n += lote.length;
         }
       }
+      if(falhas) banner(`${falhas} registro(s) do backup não puderam ser importados. Os demais entraram normalmente.`);
       if(dados.config){
         const limpa = Object.assign({}, dados.config);
         delete limpa.membrosManuais;

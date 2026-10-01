@@ -71,7 +71,7 @@ async function salvarLead(id){
     ultimoContato: hoje(),
     historico: antigo.historico || [{data:hoje(), texto:"Lead criado", autor:S.meNome}]
   });
-  await salvar("leads", l);
+  if(!await salvar("leads", l)) return;
   fecharModal(); toast(id?"Lead atualizado":"Lead criado");
 }
 function abrirLead(id){

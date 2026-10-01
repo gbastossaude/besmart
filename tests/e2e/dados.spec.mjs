@@ -33,3 +33,23 @@ test("falha ao salvar desfaz a alteração na tela e explica o motivo", async ({
   await expect(page.locator("#banner")).toBeVisible();
   await expect(page.locator('.col[data-etapa="proposta"] [data-lead="lead-1"]')).toBeVisible();
 });
+
+test("edição simultânea: a gravação em cima de versão antiga é recusada e a tela mostra a versão atual", async ({ page, abrir }) => {
+  await abrir("gestor");
+  await page.evaluate(() => abrirModal(formCliente(S.clientes.find(c => c.id === "cli-gama"))));
+  // enquanto o formulário está aberto, outra pessoa grava o mesmo cliente
+  await page.evaluate(() => {
+    const t = window.__fake.db.tables.clientes; const r = t.find(x => x.id === "cli-gama");
+    r.versao = (r.versao || 1) + 1; r.dados = Object.assign({}, r.dados, { cidade: "Campinas" });
+  });
+  await page.fill("#xNome", "Gama Serviços Renomeada");
+  await page.click('[data-act="salvarCliente"]');
+  await expect(page.locator("#banner")).toContainText("Outra pessoa alterou");
+  await expect(page.locator("#modal")).toBeVisible();          // o que foi digitado não se perde
+  expect(await page.evaluate(() => S.clientes.find(c => c.id === "cli-gama").cidade)).toBe("Campinas");
+  await page.click('[data-act="salvarCliente"]');               // salvar de novo, agora consciente
+  await expect(page.locator("#toast")).toContainText("Cliente atualizado");
+  const final = await page.evaluate(() => window.__fake.db.tables.clientes.find(c => c.id === "cli-gama"));
+  expect(final.dados.nome).toBe("Gama Serviços Renomeada");
+  expect(final.versao).toBe(3);
+});

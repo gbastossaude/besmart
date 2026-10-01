@@ -197,7 +197,7 @@ async function salvarDespesa(id){
     recorrente: val("dsRec")==="1", obs:val("dsObs"),
     responsavel: antigo.responsavel || S.uid || "", criadoEm: antigo.criadoEm || hoje()
   });
-  await salvar("despesas", d);
+  if(!await salvar("despesas", d)) return;
   S.mesDespesas = d.data.slice(0,7);
   fecharModal(); toast(id?"Gasto atualizado":"Gasto lançado");
 }

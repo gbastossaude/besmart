@@ -30,6 +30,13 @@ const dePerfil = r => ({ id:r.id, nome:r.nome||r.email||"Sem nome", email:r.emai
   splitPct:Number(r.split_pct)||0, ativo:r.status!=="bloqueado",
   criadoEm:(r.criado_em||"").slice(0,10), manual:false });
 
+/* Versão de cada linha como o banco a conhece (coluna versao, migration 0004).
+   Enviada em toda gravação: se outra pessoa gravou no meio, o banco recusa em vez
+   de a última gravação apagar a outra em silêncio. */
+const VERSOES = new Map();   // "coleção:id" -> versao
+function lembrarVersao(col, linha){
+  if(linha && linha.id && Number.isFinite(Number(linha.versao))) VERSOES.set(col+":"+linha.id, Number(linha.versao));
+}
 async function salvar(col, obj, evento){
   const i = S[col].findIndex(x=>x.id===obj.id);
   const novo = i<0;
@@ -41,7 +48,7 @@ async function salvar(col, obj, evento){
   if(novo) S[col].push(obj); else S[col][i]=obj;
   invalidarIndices();
   render();
-  if(!S.db || !S.canWrite) return;
+  if(!S.db || !S.canWrite) return true;
   try{
     if(col==="usuarios"){
       if(obj.manual){ await salvarMembroManual(obj); }
@@ -50,9 +57,12 @@ async function salvar(col, obj, evento){
         if(error) throw error;
       }
     } else {
-      const { error } = await S.db.from(COLS[col])
-        .upsert({ id:obj.id, dono:donoDe(col,obj), dados:obj }, { onConflict:"id" });
+      const linha = { id:obj.id, dono:donoDe(col,obj), dados:obj };
+      const v = VERSOES.get(col+":"+obj.id);
+      if(v!=null && !novo) linha.versao = v;
+      const { data, error } = await S.db.from(COLS[col]).upsert(linha, { onConflict:"id" }).select("id,versao");
       if(error) throw error;
+      if(Array.isArray(data) && data[0]) lembrarVersao(col, data[0]);
     }
   }catch(e){ falhaEscrita(e, col); await desfazerNaTela(col, obj.id); return false; }
   registrarAtividade(col, obj, evento, novo, antes);
@@ -64,7 +74,7 @@ async function remover(col, id, evento){
   S[col] = S[col].filter(x=>x.id!==id);
   invalidarIndices();
   render();
-  if(!S.db || !S.canWrite) return;
+  if(!S.db || !S.canWrite) return true;
   try{
     if(col==="usuarios"){
       if(antigo && antigo.manual) await removerMembroManual(id);
@@ -90,7 +100,8 @@ async function desfazerNaTela(col, id){
     if(error) throw error;
     S[col] = S[col].filter(x=>x.id!==id);
     SOMBRA.delete(col+":"+id);
-    if(data){ const obj = deLinha(data); S[col].push(obj); guardarSombra(col, obj); }
+    if(data){ const obj = deLinha(data); S[col].push(obj); guardarSombra(col, obj); lembrarVersao(col, data); }
+    else VERSOES.delete(col+":"+id);
     invalidarIndices();
     render();
   }catch(e){ registrarErro(e, { operacao:"desfazer "+col }); carregarTudo(); }
@@ -115,11 +126,13 @@ async function salvarConfig(){
   }catch(e){ falhaEscrita(e, "config"); carregarTudo(); }
 }
 /** Mensagens que o próprio banco escreve para o usuário (gatilhos da migration 0002). */
-const RE_MSG_DO_BANCO = /^(Somente o gestor|O recebimento deve|Parcela recebida não confere|Seu acesso não permite)/;
+const RE_MSG_DO_BANCO = /^(Somente o gestor|O recebimento deve|Parcela recebida não confere|Seu acesso não permite|Outra pessoa alterou)/;
 function falhaEscrita(e, col){
   const msg = (e && (e.message||e.hint||"")) + "";
   const codigo = e && e.code;
-  if(RE_MSG_DO_BANCO.test(msg)){
+  if(codigo==="40001" || /^Outra pessoa alterou/.test(msg)){
+    banner("Outra pessoa alterou este registro enquanto você editava. A tela foi atualizada com a versão dela — confira e salve de novo se ainda precisar.");
+  } else if(RE_MSG_DO_BANCO.test(msg)){
     banner(msg + " A alteração não foi salva.");
   } else if(codigo==="42501" || /row-level security|permission denied|violates/i.test(msg)){
     banner("Seu acesso não permite essa alteração — ela não foi salva. Fale com o gestor da corretora.");

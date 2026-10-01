@@ -42,3 +42,12 @@ begin
   if u is null then execute 'set role anon'; else execute 'set role authenticated'; end if;
 end $$;
 grant execute on function public._como(uuid) to anon, authenticated;
+
+-- Volta a ser o dono do projeto (SQL Editor): sem papel e sem usuário na sessão.
+create or replace function public._sair() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claim.sub', '', false);
+  perform set_config('request.jwt.claim.role', '', false);
+  execute 'reset role';
+end $$;
+grant execute on function public._sair() to anon, authenticated;

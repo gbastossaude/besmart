@@ -488,8 +488,9 @@ async function confirmarConversao(leadId){
   const contrato = lerContrato({ id:uid("ctr"), clienteId:cliente.id, clienteNome:cliente.nome, criadoEm:hoje(), exemplo:!!l.exemplo });
   l.etapa="ganho"; l.ultimoContato=hoje(); l.clienteId=cliente.id;
   l.historico=[{data:hoje(), texto:`Negócio fechado — contrato ${contrato.operadora} ${brl(contrato.valorBase)}`, autor:S.meNome}, ...(l.historico||[])];
-  if(!existente) await salvar("clientes", cliente, "Criou");
-  await salvar("contratos", contrato, existente ? "Novo produto para cliente da carteira —" : "Fechou negócio —");
+  // em sequência e parando na primeira falha: contrato sem cliente não pode ficar para trás
+  if(!existente && !await salvar("clientes", cliente, "Criou")) return;
+  if(!await salvar("contratos", contrato, existente ? "Novo produto para cliente da carteira —" : "Fechou negócio —")) return;
   await salvar("leads", l, "Marcou como ganho");
   fecharModal();
   toast("Negócio fechado — cronograma de comissão gerado");
@@ -527,7 +528,7 @@ async function salvarContrato(id){
     id: id || uid("ctr"), clienteId, clienteNome: cliente ? cliente.nome : "",
     criadoEm: antigo.criadoEm || hoje()
   }));
-  await salvar("contratos", c);
+  if(!await salvar("contratos", c)) return;
   fecharModal(); toast(id?"Contrato atualizado":"Contrato registrado");
 }
 function abrirContrato(id){

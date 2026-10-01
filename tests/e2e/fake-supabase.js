@@ -11,6 +11,8 @@
   const db = { tables: {}, users: semente.users || [], log: [], session: null, listeners: [], authCbs: [], falhas: semente.falhas || {} };
   for (const t of ["perfis", "leads", "clientes", "contratos", "vidas", "tarefas", "despesas", "config", "atividade", "auditoria"]) {
     db.tables[t] = JSON.parse(JSON.stringify((semente.tables || {})[t] || []));
+    // como no banco depois da migration 0004: toda linha tem versão
+    if (["leads", "clientes", "contratos", "vidas", "tarefas", "despesas"].includes(t)) for (const r of db.tables[t]) if (r.versao == null) r.versao = 1;
   }
   if (semente.sessionUserId) {
     const u = db.users.find(x => x.id === semente.sessionUserId);
@@ -113,6 +115,15 @@
           const i = tab.findIndex(r => r.id === linha.id);
           if (i >= 0 && this.modo === "insert") return { data: null, error: { message: "duplicate key value violates unique constraint", code: "23505" } };
           if (i >= 0 && (!podeLer(t, tab[i]) || !podeEscrever(t, tab[i], "update"))) return { data: null, error: erroRls(t) };
+          // versão (migration 0004): quem envia versão antiga é recusado
+          const COM_VERSAO = ["leads", "clientes", "contratos", "vidas", "tarefas", "despesas"].includes(t);
+          if (COM_VERSAO) {
+            if (i >= 0) {
+              const atual = tab[i].versao || 1;
+              if (linha.versao != null && linha.versao !== atual) return { data: null, error: { code: "40001", message: "Outra pessoa alterou este registro enquanto você editava. A versão atual foi carregada — confira e salve de novo." } };
+              linha.versao = atual + 1;
+            } else linha.versao = 1;
+          }
           if (!podeEscrever(t, linha, i >= 0 ? "update" : "insert")) return { data: null, error: erroRls(t) };
           linha.atualizado_em = new Date().toISOString();
           const velho = i >= 0 ? tab[i] : null;

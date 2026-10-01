@@ -487,7 +487,7 @@ async function salvarVida(id){
     obs: val("viObs")||"",
     criadoEm: (antiga && antiga.criadoEm) || hoje()
   });
-  await salvar("vidas", v, id ? "Alterou a vida de" : "Incluiu no plano —");
+  if(!await salvar("vidas", v, id ? "Alterou a vida de" : "Incluiu no plano —")) return;
   fecharModal();
   toast(id ? "Vida atualizada" : "Vida incluída");
 }

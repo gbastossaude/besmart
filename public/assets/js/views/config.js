@@ -90,6 +90,7 @@ function viewConfig(){
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" data-act="exportar">Baixar backup (JSON)</button>
+          <button class="btn" data-act="rodarAutomacoes" title="Cria agora os follow-ups de propostas paradas e de renovações próximas">Rodar automações agora</button>
           <button class="btn" data-act="importar">Importar backup</button>
           <button class="btn danger" data-act="limparExemplos">Apagar dados de exemplo</button>
         </div>

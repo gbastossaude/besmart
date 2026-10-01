@@ -48,7 +48,7 @@ insert into leads (id, dono, dados) values ('lead-a', :A, '{"id":"lead-a","nome"
 select _como(null);
 select _barrado('select 1 from clientes', 'anônimo não lê clientes (sem privilégio)');
 select _barrado('select 1 from contratos', 'anônimo não lê contratos');
-reset role;
+select _sair();
 
 -- ================= PENDENTE =================
 select _como(:P);
@@ -57,7 +57,7 @@ select _ok((select count(*) from contratos) = 0, 'pendente não enxerga contrato
 select _barrado($$insert into leads (id, dono, dados) values ('lead-p', '00000000-0000-4000-8000-0000000000d1', '{"id":"lead-p"}')$$, 'pendente não cria lead');
 select _barrado($$update perfis set papel = 'gestor', status = 'ativo' where id = '00000000-0000-4000-8000-0000000000d1'$$, 'pendente não se promove a gestor');
 select _ok((select count(*) from config) = 0, 'pendente não lê a configuração');
-reset role;
+select _sair();
 
 -- ================= CORRETOR A =================
 select _como(:A);
@@ -73,28 +73,28 @@ select _ok((select nome from perfis where id = :A) = 'Ana Souza', 'corretor muda
 select _barrado($$insert into clientes (id, dono, dados) values ('cli-x', '00000000-0000-4000-8000-00000000000b', '{"id":"cli-x"}')$$, 'corretor não cria registro em nome do colega');
 select _barrado($$update clientes set dono = '00000000-0000-4000-8000-00000000000b' where id = 'cli-a'$$, 'corretor não passa cliente para o colega');
 update contratos set dados = dados || '{"numero":"X"}' where id = 'ctr-b';
-reset role;
+select _sair();
 select _ok((select dados->>'numero' from contratos where id = 'ctr-b') is null, 'corretor não altera contrato do colega');
 select _como(:A);
 
 -- exclusão: só o gestor
 delete from clientes where id = 'cli-a';
 delete from contratos where id = 'ctr-a';
-reset role;
+select _sair();
 select _ok((select count(*) from clientes where id = 'cli-a') = 1, 'corretor não exclui cliente (nem o próprio)');
 select _ok((select count(*) from contratos where id = 'ctr-a') = 1, 'corretor não exclui contrato (nem o próprio)');
 select _como(:A);
 
 -- split e imposto: o banco mantém o valor definido pelo gestor
 update contratos set dados = jsonb_set(dados, '{splitPct}', '100') || '{"impostoPct": 0}' where id = 'ctr-a';
-reset role;
+select _sair();
 select _ok((select (dados->>'splitPct')::numeric from contratos where id = 'ctr-a') = 40, 'corretor não aumenta o próprio split no contrato');
 select _ok(not (select dados ? 'impostoPct' from contratos where id = 'ctr-a'), 'corretor não define imposto do contrato');
 select _como(:A);
 
 -- contrato novo do corretor: split vem do perfil, não do que foi enviado
 insert into contratos (id, dono, dados) values ('ctr-a2', :A, '{"id":"ctr-a2","clienteId":"cli-a","pilar":"saude","status":"proposta","splitPct":95,"impostoPct":0,"comissoes":[]}');
-reset role;
+select _sair();
 select _ok((select (dados->>'splitPct')::numeric from contratos where id = 'ctr-a2') = 40, 'contrato novo do corretor recebe o split do perfil');
 select _como(:A);
 select _barrado($$insert into contratos (id, dono, dados) values ('ctr-a3', '00000000-0000-4000-8000-00000000000a', '{"id":"ctr-a3","comissoes":[{"tipo":"agenciamento","vence":"2026-01-01","valor":9999,"status":"recebido","valorRecebido":9999}]}')$$,
@@ -102,7 +102,7 @@ select _barrado($$insert into contratos (id, dono, dados) values ('ctr-a3', '000
 
 -- conciliação: receber pelo valor previsto pode; desfazer, alterar ou inflar não
 update contratos set dados = jsonb_set(dados, '{comissoes,1}', '{"n":2,"tipo":"agenciamento","pct":50,"valor":500,"vence":"2026-02-10","status":"recebido","recebidoEm":"2026-02-11","valorRecebido":500}') where id = 'ctr-a';
-reset role;
+select _sair();
 select _ok((select dados->'comissoes'->1->>'status' from contratos where id = 'ctr-a') = 'recebido', 'corretor marca parcela prevista como recebida');
 select _como(:A);
 select _barrado($$update contratos set dados = jsonb_set(dados, '{comissoes,0,status}', '"previsto"') where id = 'ctr-a'$$, 'corretor não desfaz recebimento');
@@ -113,7 +113,7 @@ select _barrado($$update contratos set dados = jsonb_set(dados, '{comissoes,2}',
 select _barrado($$update contratos set dados = jsonb_set(dados, '{comissoes}', (dados->'comissoes') || '[{"tipo":"bonus","vence":"2026-04-01","valor":300,"status":"recebido","valorRecebido":300}]') where id = 'ctr-a'$$, 'corretor não inventa parcela recebida');
 -- o fluxo normal da tela continua: mudar a mensalidade refaz as previstas
 update contratos set dados = jsonb_set(jsonb_set(dados, '{valorBase}', '1100'), '{comissoes,2,valor}', '550') where id = 'ctr-a';
-reset role;
+select _sair();
 select _ok((select (dados->'comissoes'->2->>'valor')::numeric from contratos where id = 'ctr-a') = 550, 'corretor ainda corrige a mensalidade e as parcelas previstas acompanham');
 select _como(:A);
 -- upsert (o que a tela faz) também passa pelas regras
@@ -129,18 +129,18 @@ select _barrado($$insert into atividade (id, quem, dados) values ('atv-2', '0000
 select _ok(exists (select 1 from public.cliente_por_documento('22.333.444/0001-90')), 'corretor descobre CNPJ já cadastrado na carteira do colega');
 select _ok((select visivel = false and id is null and nome is null and responsavel = 'Beto' from public.cliente_por_documento('22333444000190')), '... sem ver os dados do cliente do colega');
 select _barrado($$select public.transferir_carteira('00000000-0000-4000-8000-00000000000b', '00000000-0000-4000-8000-00000000000a')$$, 'corretor não transfere carteira');
-reset role;
+select _sair();
 
 -- ================= ASSISTENTE =================
 select _como(:C);
 select _ok((select count(*) from clientes) = 2, 'assistente vê a carteira inteira');
 select _ok((select count(*) from despesas) = 0, 'assistente não vê despesas');
 update contratos set dados = jsonb_set(dados, '{splitPct}', '10') where id = 'ctr-b';
-reset role;
+select _sair();
 select _ok((select (dados->>'splitPct')::numeric from contratos where id = 'ctr-b') = 50, 'assistente não altera split');
 select _como(:C);
 delete from contratos where id = 'ctr-b';
-reset role;
+select _sair();
 select _ok((select count(*) from contratos where id = 'ctr-b') = 1, 'assistente não exclui contrato');
 
 -- ================= GESTOR =================
@@ -160,11 +160,11 @@ select _ok((select registro->>'clienteId' = 'cli-a' from auditoria where registr
 select _barrado($$delete from auditoria$$, 'nem o gestor apaga a auditoria pela API');
 select _barrado($$update auditoria set quem = null$$, 'nem o gestor edita a auditoria pela API');
 select _barrado($$delete from atividade$$, 'atividade é só inclusão: nem o gestor apaga');
-reset role;
+select _sair();
 select _ok((select count(*) from atividade) = 1, '... e o registro continua lá');
 select _como(:G);
 select _ok((public.transferir_carteira('00000000-0000-4000-8000-00000000000b', '00000000-0000-4000-8000-00000000000a')->>'contratos')::int = 1, 'gestor transfere a carteira de um corretor');
-reset role;
+select _sair();
 select _ok((select dono = '00000000-0000-4000-8000-00000000000a'::uuid and dados->>'corretor' = '00000000-0000-4000-8000-00000000000a' from contratos where id = 'ctr-b'), 'contrato transferido muda de dono e de corretor');
 select _ok((select dono = '00000000-0000-4000-8000-00000000000a'::uuid from vidas where id = 'vida-b'), 'vidas acompanham a transferência');
 
@@ -187,8 +187,41 @@ insert into erros_app (pagina, operacao, mensagem) values ('clientes', 'desenhar
 select _ok((select count(*) from erros_app) = 0, 'corretor registra erro mas não lê a tabela');
 select _barrado($$insert into erros_app (quem, mensagem) values ('00000000-0000-4000-8000-00000000000b', 'falso')$$, 'erro não pode ser registrado em nome de outro');
 select _barrado($$insert into erros_app (mensagem) values (repeat('x', 5000))$$, 'mensagem gigante é recusada');
-reset role;
+select _sair();
 select _como('00000000-0000-4000-8000-000000000001');
 select _ok((select count(*) from erros_app) = 1, 'gestor lê os erros registrados');
 select _barrado($$delete from erros_app$$, 'erros não são apagados pela API');
-reset role;
+select _sair();
+
+-- ================= 0004: versão e automações =================
+insert into clientes (id, dono, dados) values ('cli-v', '00000000-0000-4000-8000-00000000000a', '{"id":"cli-v","nome":"Versão"}');
+select _ok((select versao from clientes where id = 'cli-v') = 1, 'registro nasce na versão 1');
+select _como('00000000-0000-4000-8000-00000000000a');
+update clientes set dados = dados || '{"cidade":"Recife"}', versao = 1 where id = 'cli-v';
+select _ok((select versao from clientes where id = 'cli-v') = 2, 'gravação com a versão lida avança a versão');
+select _barrado($$update clientes set dados = dados || '{"cidade":"Olinda"}', versao = 1 where id = 'cli-v'$$, 'gravação em cima de versão antiga é recusada (edição simultânea)');
+select _barrado($$insert into clientes (id, dono, dados, versao) values ('cli-v', '00000000-0000-4000-8000-00000000000a', '{"id":"cli-v","nome":"X"}', 1) on conflict (id) do update set dados = excluded.dados, versao = excluded.versao$$, 'upsert com versão antiga também é recusado');
+update clientes set dados = dados || '{"uf":"PE"}' where id = 'cli-v';
+select _ok((select versao = 3 and dados->>'uf' = 'PE' from clientes where id = 'cli-v'), 'aplicativo antigo (sem versão) continua gravando');
+select _sair();
+
+-- contrato implantado gera a tarefa de pós-implantação (uma vez só)
+insert into contratos (id, dono, dados) values ('ctr-imp', '00000000-0000-4000-8000-00000000000a', '{"id":"ctr-imp","clienteId":"cli-v","clienteNome":"Versão","status":"proposta","comissoes":[]}');
+update contratos set dados = jsonb_set(dados, '{status}', '"implantado"') where id = 'ctr-imp';
+update contratos set dados = jsonb_set(dados, '{status}', '"ativo"') where id = 'ctr-imp';
+select _ok((select count(*) from tarefas where dados->>'chaveAuto' = 'implantacao:ctr-imp') = 1, 'implantação gera uma tarefa automática de pós-venda');
+select _ok((select dono = '00000000-0000-4000-8000-00000000000a'::uuid and (dados->>'vence')::date = current_date + 15 from tarefas where dados->>'chaveAuto' = 'implantacao:ctr-imp'), '... para o corretor do contrato, em 15 dias');
+
+-- rotina diária: proposta parada e renovação, sem duplicar
+insert into contratos (id, dono, dados) values
+ ('ctr-par', '00000000-0000-4000-8000-00000000000a', '{"id":"ctr-par","clienteNome":"Parada","status":"proposta","comissoes":[]}'),
+ ('ctr-ren', '00000000-0000-4000-8000-00000000000a', jsonb_build_object('id','ctr-ren','clienteNome','Renova','status','ativo','fim',(current_date + 20)::text,'comissoes','[]'::jsonb));
+alter table contratos disable trigger trg_carimbo_contratos;
+update contratos set atualizado_em = now() - interval '10 days' where id = 'ctr-par';
+alter table contratos enable trigger trg_carimbo_contratos;
+select _ok((select (public.gerar_tarefas_automaticas()->>'propostas_paradas')::int) >= 1, 'rotina cria follow-up de proposta parada');
+select _ok((select (public.gerar_tarefas_automaticas()->>'propostas_paradas')::int) = 0, 'rodar de novo não duplica');
+select _ok((select count(*) from tarefas where dados->>'chaveAuto' like 'renovacao:ctr-ren:%') = 1, 'contrato vencendo em 45 dias gera tarefa de renovação');
+select _como('00000000-0000-4000-8000-00000000000a');
+select _barrado($$select public.gerar_tarefas_automaticas()$$, 'corretor não dispara a rotina');
+select _sair();
