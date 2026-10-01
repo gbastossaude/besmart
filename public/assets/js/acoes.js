@@ -24,6 +24,8 @@ document.addEventListener("click", async e=>{
 async function executarAcao(a, id, el, e){
   switch(a){
     case "recarregarPagina": location.reload(); break;
+    case "abrirBusca": abrirBusca(); break;
+    case "instalarApp": await instalarApp(); break;
     case "fechar": fecharModal(); break;
     case "fecharBanner": limparBanner(); break;
     case "escopo": S.escopo = el.dataset.v; zerarPaginas(); render(); break;

@@ -52,7 +52,8 @@ function abrirModal(html, wide){
   $("#modal").innerHTML = html;
   $("#scrim").classList.add("open");
   const f = $("#modal").querySelector("input,select,textarea");
-  if(f) setTimeout(()=>f.focus(),40);
+  // foco imediato: com atraso, quem já começou a digitar tinha o texto jogado em outro campo
+  if(f) f.focus({ preventScroll:true });
 }
 function fecharModal(){ $("#scrim").classList.remove("open"); $("#modal").innerHTML=""; }
 $("#scrim").addEventListener("mousedown", e=>{ if(e.target.id==="scrim") fecharModal(); });

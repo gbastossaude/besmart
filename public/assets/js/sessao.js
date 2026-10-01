@@ -83,6 +83,8 @@ async function iniciarSessao(session){
   S.meuEmail = session.user.email;
   S.meNome = session.user.user_metadata?.nome || session.user.email.split("@")[0];
   S.online = true; S.canWrite = true;
+  const tela = telaInicialDaUrl();
+  if(tela) S.view = tela;
   mostrarSistema();
   montarNav();
   render();

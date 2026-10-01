@@ -1,38 +1,75 @@
 # Erbe · Central — publicação no Netlify
-# Site estático: não há build, o Netlify só serve os arquivos da pasta.
+# Site estático: não há etapa de build; o Netlify publica a pasta public/.
+# (Os testes e ferramentas do repositório ficam fora dela e não vão ao ar.)
 
 [build]
-  publish = "."
+  publish = "public"
   command = ""
 
-# O sistema é de página única: qualquer caminho cai no index.html.
+[build.environment]
+  NODE_VERSION = "22"
+
+# O sistema é de página única: caminho desconhecido cai no index.html.
 # Isso faz o link de acesso enviado por e-mail voltar para o lugar certo.
+# O /arsenal/ (material de vendas BeSmart) é uma página própria e é servido antes desta regra.
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
+# Cabeçalhos de segurança para tudo. A Content-Security-Policy do sistema está
+# no <meta> do index.html (assim vale em qualquer caminho que caia no index.html
+# e não atrapalha o /arsenal/, que usa bibliotecas externas).
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    X-Robots-Tag = "noindex, nofollow"
 
-# config.js muda quando você troca de projeto no Supabase: não deixe em cache.
+# config.js muda quando você troca de projeto no Supabase: nunca em cache.
 [[headers]]
   for = "/config.js"
   [headers.values]
     Cache-Control = "no-store"
 
-# Bibliotecas do PDF e a fonte Sora: não mudam entre versões, podem ficar em cache.
-[[headers]]
-  for = "/vendor/*"
-  [headers.values]
-    Cache-Control = "public, max-age=604800"
-
+# Página, código e service worker: o navegador sempre confere se há versão nova
+# (resposta 304 barata quando nada mudou). Publicou, todo mundo recebe.
 [[headers]]
   for = "/index.html"
   [headers.values]
     Cache-Control = "no-cache"
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/assets/js/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/assets/app.css"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# Fontes, ícones e bibliotecas: não mudam entre versões.
+[[headers]]
+  for = "/assets/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+[[headers]]
+  for = "/assets/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

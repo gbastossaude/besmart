@@ -306,12 +306,12 @@ ${abas.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlform
 }
 
 /* ---------- PDF ---------- */
+/* Servidas do próprio site (vendor/), com verificação de integridade (SRI).
+   Sem CDN de terceiros: a política de segurança (CSP) só permite script do próprio domínio. */
 const VENDOR_PDF = [
   { teste:()=>window.jspdf && window.jspdf.jsPDF, local:"vendor/jspdf.umd.min.js",
-    cdn:"https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js",
     sri:"sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" },
   { teste:()=>window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable, local:"vendor/jspdf.plugin.autotable.min.js",
-    cdn:"https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js",
     sri:"sha384-Xl/CUCfJbzsngMp0CFxkmF0VW/8C160IsGujqeQlIhaGxKz2+JsIGORFqtCPeldF" }
 ];
 function carregarScript(src, sri){
@@ -330,8 +330,7 @@ function carregarJsPDF(){
     PDF_CARREGANDO = (async()=>{
       for(const v of VENDOR_PDF){
         if(v.teste()) continue;
-        try{ await carregarScript(v.local, v.sri); }
-        catch(e){ await carregarScript(v.cdn, v.sri); }
+        await carregarScript(v.local, v.sri);
         if(!v.teste()) throw new Error("biblioteca de PDF incompleta");
       }
       return true;

@@ -2,6 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<!-- Política de segurança: só código do próprio site; conexões só com o Supabase.
+     Se o projeto usar domínio próprio no Supabase, acrescente-o em connect-src. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0E1110">
 <title>Erbe · Central</title>
@@ -10,7 +13,10 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Erbe">
 <link rel="preload" href="assets/fonts/sora-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/app.css">
 <!-- config.js traz o endereço e a chave PÚBLICA (anon) do Supabase. Precisa vir antes do código. -->
@@ -38,6 +44,9 @@
     <div id="rail-foot">
       <div class="avatar" id="meAv" aria-hidden="true">—</div>
       <div class="rail-user"><b id="meName">Carregando…</b><span id="meRole"></span></div>
+      <button class="icon-btn" id="instalarBtn" data-act="instalarApp" title="Instalar como aplicativo" aria-label="Instalar como aplicativo" hidden>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      </button>
       <button class="icon-btn" id="themeBtn" title="Alternar tema" aria-label="Alternar tema">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
       </button>
@@ -50,6 +59,9 @@
     <div id="banner" role="alert" hidden></div>
     <header id="topbar">
       <div><h1 id="pageTitle">Painel</h1><div class="sub" id="pageSub"></div></div>
+      <button class="btn busca-btn" type="button" data-act="abrirBusca" aria-label="Buscar (Ctrl+K)" title="Buscar em tudo (Ctrl+K)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span class="busca-rot">Buscar</span><kbd class="busca-kbd">Ctrl K</kbd></button>
       <div class="topbar-actions" id="pageActions"></div>
     </header>
     <div id="view"></div>
@@ -90,6 +102,8 @@
 <script src="assets/js/forms/contrato.js"></script>
 <script src="assets/js/forms/cliente.js"></script>
 <script src="assets/js/forms/outros.js"></script>
+<script src="assets/js/busca.js"></script>
+<script src="assets/js/pwa.js"></script>
 <script src="assets/js/acoes.js"></script>
 </body>
 </html>
