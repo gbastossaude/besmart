@@ -56,7 +56,7 @@ exportação Excel/PDF sem dependência de servidor, identidade visual da marca.
 | # | Problema | Status |
 |---|---|---|
 | M1 | Erro de JavaScript em uma tela derrubava a tela inteira, sem registro. | ✅ Tratamento global, tela de erro amigável, registro técnico em `erros_app` (0003). |
-| M2 | Arquivo único de 556 KB: difícil de manter, sem cache por partes. | ✅ 36 módulos por domínio, CSS e fontes em arquivos, lint entre módulos. |
+| M2 | Arquivo único de 556 KB: difícil de manter, sem cache por partes. | ✅ 35 módulos por domínio, CSS e fontes em arquivos, lint entre módulos. |
 | M3 | Item ativo do menu nunca ficava destacado (`montarNav` sobrescrevia `aria-current`). | ✅ |
 | M4 | Modal roubava o foco 40 ms depois de abrir (texto ia para o campo errado); Enter na busca usava resultado anterior. | ✅ |
 | M5 | Celular: ~330 px de cabeçalho antes do conteúdo, menu horizontal escondido, tabelas com rolagem lateral, modal pequeno. | ✅ Barra de atalhos, menu em gaveta, tabelas em cartões, modal em tela cheia. |
@@ -84,7 +84,7 @@ exportação Excel/PDF sem dependência de servidor, identidade visual da marca.
 
 | Verificação | Resultado |
 |---|---|
-| `npm run lint` (36 módulos concatenados, `no-undef`/`no-redeclare` entre arquivos) | 0 erros, 0 avisos |
+| `npm run lint` (35 módulos concatenados, `no-undef`/`no-redeclare` entre arquivos) | 0 erros, 0 avisos |
 | `npm run test:unit` (motor de comissão, validação, datas ANS) | 13/13 |
 | `npm run test:db` (migrations aplicadas 2× + RLS em PostgreSQL 16) | 98/98 |
 | `npm run test:e2e` (Chromium desktop e celular) | 38/38 |

@@ -8,7 +8,7 @@ renovações, agenda, despesas, relatórios, documentos e auditoria.
  Navegador (PWA)                         Supabase
  ┌───────────────────────────┐    HTTPS  ┌──────────────────────────────────┐
  │ public/index.html         │  ───────▶ │ Auth (e-mail/senha, link mágico) │
- │ assets/js/*.js (36 mód.)  │  PostgREST│ PostgreSQL + RLS                 │
+ │ assets/js/*.js (35 mód.)  │  PostgREST│ PostgreSQL + RLS                 │
  │ estado em memória (S)     │ ◀──────── │  tabelas jsonb + gatilhos        │
  │ índices + cache derivados │  Realtime │  auditoria · versão · automações │
  │ service worker (só código)│  (wss)    │ Storage: bucket privado          │
