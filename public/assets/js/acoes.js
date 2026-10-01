@@ -30,6 +30,8 @@ async function executarAcao(a, id, el, e){
     case "historico": await abrirHistorico(el.dataset.tabela, id, el.dataset.titulo); break;
     case "restaurarExcluido": await restaurarExcluido(id); break;
     case "transferirCarteira": await transferirCarteira(id); break;
+    case "verDocumento": await verDocumento(id, el.dataset.cliente); break;
+    case "excluirDocumento": await excluirDocumento(id, el.dataset.cliente); break;
     case "rodarAutomacoes": {
       const { data, error } = await S.db.rpc("gerar_tarefas_automaticas");
       if(error){ if(/does not exist|não existe/i.test(error.message)) toast("Aplique a migration 0004 no Supabase para ativar as automações."); else falhaEscrita(error); break; }
@@ -661,6 +663,7 @@ function aplicarCaminho(path, fn){
   else S.config[a] = fn(S.config[a]||[]);
 }
 document.addEventListener("change", e=>{
+  if(e.target.id==="docArquivo"){ enviarDocumentos(e.target); return; }
   const cel = e.target.closest("[data-linha]");
   if(cel){ editarLinha(Number(cel.dataset.linha), cel.dataset.campo, cel.value); return; }
   if(e.target.id==="lPilar" || e.target.id==="lPrev"){ renderEditor(); return; }

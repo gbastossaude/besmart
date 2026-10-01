@@ -225,3 +225,34 @@ select _ok((select count(*) from tarefas where dados->>'chaveAuto' like 'renovac
 select _como('00000000-0000-4000-8000-00000000000a');
 select _barrado($$select public.gerar_tarefas_automaticas()$$, 'corretor não dispara a rotina');
 select _sair();
+
+-- ================= 0005: documentos =================
+select _ok((select not public from storage.buckets where id = 'documentos'), 'bucket de documentos é privado');
+insert into clientes (id, dono, dados) values ('cli-doc', '00000000-0000-4000-8000-00000000000b', '{"id":"cli-doc","nome":"Do Beto"}');
+select _como('00000000-0000-4000-8000-00000000000b');
+insert into storage.objects (bucket_id, name) values ('documentos', 'clientes/cli-doc/rg.pdf');
+insert into documentos (cliente_id, nome, categoria, caminho, tipo_mime, tamanho) values ('cli-doc', 'RG.pdf', 'Documento pessoal', 'clientes/cli-doc/rg.pdf', 'application/pdf', 1000);
+select _ok((select count(*) from documentos where cliente_id = 'cli-doc') = 1, 'corretor anexa documento ao próprio cliente');
+select _barrado($$insert into documentos (cliente_id, nome, caminho) values ('cli-doc', 'x', 'clientes/outro/x.pdf')$$, 'caminho precisa ser a pasta do próprio cliente');
+select _barrado($$update documentos set nome = 'outro' where cliente_id = 'cli-doc'$$, 'documento não é editado pela API (só incluído ou excluído)');
+select _sair();
+select _como('00000000-0000-4000-8000-00000000000a');
+select _ok((select count(*) from documentos where cliente_id = 'cli-doc') = 0, 'outro corretor não vê o documento');
+select _ok((select count(*) from storage.objects where name = 'clientes/cli-doc/rg.pdf') = 0, '... nem o arquivo no Storage');
+select _barrado($$insert into storage.objects (bucket_id, name) values ('documentos', 'clientes/cli-doc/intruso.pdf')$$, 'outro corretor não envia arquivo para cliente que não é dele');
+delete from storage.objects where name = 'clientes/cli-doc/rg.pdf';
+select _sair();
+select _ok((select count(*) from storage.objects where name = 'clientes/cli-doc/rg.pdf') = 1, 'outro corretor não apaga o arquivo');
+select _como('00000000-0000-4000-8000-0000000000c1');
+select _ok((select count(*) from documentos where cliente_id = 'cli-doc') = 1, 'assistente (vê a carteira toda) vê o documento');
+delete from documentos where cliente_id = 'cli-doc';
+select _sair();
+select _ok((select count(*) from documentos where cliente_id = 'cli-doc') = 1, 'assistente não exclui documento que não enviou');
+select _como('00000000-0000-4000-8000-000000000001');
+delete from documentos where cliente_id = 'cli-doc';
+select _sair();
+select _ok((select count(*) from documentos where cliente_id = 'cli-doc') = 0, 'gestor exclui documento');
+select _ok((select count(*) from auditoria where tabela = 'documentos') = 2, 'auditoria registra quem anexou e quem excluiu');
+select _como(null);
+select _barrado($$select 1 from documentos$$, 'anônimo não lê documentos');
+select _sair();

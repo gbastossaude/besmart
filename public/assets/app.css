@@ -486,3 +486,7 @@ kbd{font-family:var(--sans);font-size:10.5px;border:1px solid var(--line-strong)
 .stat.hero .meta-barra span{display:block;height:100%;background:var(--accent-deep);border-radius:99px}
 .prod-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
 .prod-tit{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:6px}
+
+/* ---------- documentos do cliente ---------- */
+.docs-envio{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:12px;align-items:end}
+.docs-envio input[type=file]{font-size:12.5px;padding:7px;border:1px dashed var(--line-strong);border-radius:8px;width:100%;background:var(--surface-2)}

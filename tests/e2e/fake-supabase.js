@@ -9,7 +9,8 @@
   const MAX_ROWS = 1000;
   const semente = window.__FAKE_DB__ || {};
   const db = { tables: {}, users: semente.users || [], log: [], session: null, listeners: [], authCbs: [], falhas: semente.falhas || {} };
-  for (const t of ["perfis", "leads", "clientes", "contratos", "vidas", "tarefas", "despesas", "config", "atividade", "auditoria"]) {
+  db.arquivos = new Map();
+  for (const t of ["perfis", "leads", "clientes", "contratos", "vidas", "tarefas", "despesas", "config", "atividade", "auditoria", "documentos"]) {
     db.tables[t] = JSON.parse(JSON.stringify((semente.tables || {})[t] || []));
     // como no banco depois da migration 0004: toda linha tem versão
     if (["leads", "clientes", "contratos", "vidas", "tarefas", "despesas"].includes(t)) for (const r of db.tables[t]) if (r.versao == null) r.versao = 1;
@@ -36,8 +37,10 @@
     if (t === "config") return ativo();
     if (t === "atividade") return gestor() || r.quem === uid();
     if (t === "auditoria") return gestor();
+    if (t === "documentos") return possoVerCliente(r.cliente_id);
     return false;
   }
+  function possoVerCliente(id) { return ativo() && (vejoTudo() || db.tables.clientes.some(c => c.id === id && c.dono === uid())); }
   function podeEscrever(t, r, op) {
     if (!uid()) return false;
     if (t === "perfis") return op === "update" ? (r.id === uid() || gestor()) : gestor();
@@ -48,6 +51,11 @@
     if (t === "vidas") return podeLer("vidas", r);
     if (t === "despesas" || t === "config") return gestor();
     if (t === "atividade") return op === "insert" && ativo() && r.quem === uid();
+    if (t === "documentos") {
+      if (op === "insert") return r.enviado_por === uid() && possoVerCliente(r.cliente_id) && String(r.caminho || "").startsWith(`clientes/${r.cliente_id}/`);
+      if (op === "delete") return gestor() || (r.enviado_por === uid() && possoVerCliente(r.cliente_id));
+      return false;
+    }
     return false;
   }
   const erroRls = t => ({ message: `new row violates row-level security policy for table "${t}"`, code: "42501" });
@@ -110,7 +118,7 @@
       if (this.modo === "upsert" || this.modo === "insert") {
         const feitos = [];
         for (const v of this.payload) {
-          const linha = Object.assign({ dono: uid() }, JSON.parse(JSON.stringify(v)));
+          const linha = Object.assign(t === "documentos" ? { id: crypto.randomUUID(), enviado_por: uid(), enviado_em: new Date().toISOString() } : { dono: uid() }, JSON.parse(JSON.stringify(v)));
           if (t === "atividade" && linha.quem === undefined) linha.quem = uid();
           const i = tab.findIndex(r => r.id === linha.id);
           if (i >= 0 && this.modo === "insert") return { data: null, error: { message: "duplicate key value violates unique constraint", code: "23505" } };
@@ -201,6 +209,19 @@
       },
       signInWithOtp: async () => ({ data: {}, error: null }),
       signOut: async () => { db.session = null; avisarAuth("SIGNED_OUT"); return { error: null }; }
+    },
+    storage: {
+      from: () => ({
+        upload: async (caminho, arquivo) => {
+          if (!possoVerCliente(caminho.split("/")[1])) return { data: null, error: { message: "new row violates row-level security policy", statusCode: "403" } };
+          db.arquivos.set(caminho, { nome: arquivo.name, tamanho: arquivo.size, dono: uid() });
+          return { data: { path: caminho }, error: null };
+        },
+        createSignedUrl: async (caminho) => db.arquivos.has(caminho) && possoVerCliente(caminho.split("/")[1])
+          ? { data: { signedUrl: "/robots.txt?arquivo=" + encodeURIComponent(caminho) }, error: null }
+          : { data: null, error: { message: "Object not found" } },
+        remove: async (caminhos) => { for (const c of caminhos) db.arquivos.delete(c); return { data: caminhos, error: null }; }
+      })
     },
     channel: () => {
       const ch = {
