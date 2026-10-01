@@ -172,28 +172,6 @@ function painelLembretes(todas){
 }
 
 /* ============================================================
-   IMPOSTO SOBRE A COMISSÃO
-   A alíquota vem da própria parcela, senão do contrato, senão do padrão
-   em Configurações. O imposto sai da parte da corretora; o repasse do
-   corretor é calculado sobre o bruto — ou sobre o líquido, se o gestor
-   escolher assim em Configurações.
-   ============================================================ */
-const temValor = v => v!=null && v!=="" && !isNaN(Number(v));
-function aliquotaDe(p, c){
-  if(p && temValor(p.impostoPct)) return Number(p.impostoPct);
-  if(c && temValor(c.impostoPct)) return Number(c.impostoPct);
-  return Number(S.config && S.config.impostoPadrao)||0;
-}
-const splitSobreLiquido = () => !!(S.config && S.config.splitSobre==="liquido");
-/** Quanto de cada real da parcela vai para o corretor. */
-function fatorCorretor(p, c){
-  const split = (Number(c && c.splitPct)||0)/100;
-  return splitSobreLiquido() ? split*(1-aliquotaDe(p,c)/100) : split;
-}
-const haImposto = () => (Number(S.config && S.config.impostoPadrao)||0) > 0
-  || S.contratos.some(c=>temValor(c.impostoPct) && Number(c.impostoPct)>0 || (c.comissoes||[]).some(p=>temValor(p.impostoPct) && Number(p.impostoPct)>0));
-
-/* ============================================================
    PREVISÃO DE COMISSÕES
    Da camada mais certa para a menos certa:
    1. Contratado — parcelas que já estão no cronograma dos contratos

@@ -156,7 +156,7 @@ function indices(){
   const clientePorDoc = new Map();   // documento limpo -> cliente
   for(const c of S.clientes){
     clientePorId.set(c.id, c);
-    const d = soDigitos(c.doc);
+    const d = normDoc(c.doc);
     if(d) clientePorDoc.set(d, c);
   }
   for(const ct of S.contratos){
@@ -182,7 +182,7 @@ const clientePorId       = id => indices().clientePorId.get(id) || null;
 const soDigitos          = v => String(v||"").replace(/\D/g,"");
 /** Cliente que já tem esse CPF/CNPJ — a trava de duplicidade da etapa 3. */
 function clientePorDoc(doc, exceto){
-  const d = soDigitos(doc);
+  const d = normDoc(doc);
   if(!d) return null;
   const c = indices().clientePorDoc.get(d);
   return (c && c.id !== exceto) ? c : null;
@@ -276,4 +276,26 @@ function noEscopo(item, campo){
   if(S.escopo==="todos" && !escopoTravado()) return true;
   return item[campo||"responsavel"]===S.uid;
 }
+
+/* ============================================================
+   IMPOSTO SOBRE A COMISSÃO
+   A alíquota vem da própria parcela, senão do contrato, senão do padrão
+   em Configurações. O imposto sai da parte da corretora; o repasse do
+   corretor é calculado sobre o bruto — ou sobre o líquido, se o gestor
+   escolher assim em Configurações.
+   ============================================================ */
+const temValor = v => v!=null && v!=="" && !isNaN(Number(v));
+function aliquotaDe(p, c){
+  if(p && temValor(p.impostoPct)) return Number(p.impostoPct);
+  if(c && temValor(c.impostoPct)) return Number(c.impostoPct);
+  return Number(S.config && S.config.impostoPadrao)||0;
+}
+const splitSobreLiquido = () => !!(S.config && S.config.splitSobre==="liquido");
+/** Quanto de cada real da parcela vai para o corretor. */
+function fatorCorretor(p, c){
+  const split = (Number(c && c.splitPct)||0)/100;
+  return splitSobreLiquido() ? split*(1-aliquotaDe(p,c)/100) : split;
+}
+const haImposto = () => (Number(S.config && S.config.impostoPadrao)||0) > 0
+  || S.contratos.some(c=>temValor(c.impostoPct) && Number(c.impostoPct)>0 || (c.comissoes||[]).some(p=>temValor(p.impostoPct) && Number(p.impostoPct)>0));
 

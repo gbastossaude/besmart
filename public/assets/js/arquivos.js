@@ -15,9 +15,6 @@ function baixarCSV(nome, colunas, linhas){
     .concat(linhas.map(l=>l.map(esc2).join(";"))).join("\r\n");
   entregarArquivo(`${nome}-${hoje()}.csv`, "﻿"+corpo, "text/csv;charset=utf-8");
 }
-/** Entrega um arquivo ao usuário. Dentro do artifact isso passa pela permissão
-    de download do próprio visualizador; no sistema publicado (Netlify) o link
-    comum do navegador resolve. Tenta o primeiro e cai no segundo. */
 /* ============================================================
    ARQUIVOS: entrega, Excel (.xlsx) e PDF
    O .xlsx é montado aqui mesmo (é um ZIP de XMLs), sem biblioteca.
@@ -26,20 +23,6 @@ function baixarCSV(nome, colunas, linhas){
    ============================================================ */
 /** Oferece um arquivo para download. Aceita texto, Blob ou bytes. */
 async function entregarArquivo(nome, dados, mime){
-  try{
-    const d = await window.claude?.use?.("downloads");
-    if(d && d.save){
-      try{ await d.save({ filename:nome, data:dados }); toast("Arquivo pronto"); return true; }
-      catch(e){
-        const c = e && e.code;
-        if(c==="declined") return true;      // a pessoa escolheu não baixar: nada a fazer
-        if(c==="rate_limited"){ toast("Já tem um download esperando a sua confirmação."); return false; }
-        if(c==="rejected_extension" || c==="extension_not_enabled"){ toast("Este formato não pode ser baixado aqui."); return false; }
-        if(c==="too_large"){ toast("O arquivo ficou grande demais — aplique mais filtros."); return false; }
-        // qualquer outro motivo: tenta o download comum do navegador
-      }
-    }
-  }catch(e){}
   try{
     const blob = dados instanceof Blob ? dados : new Blob([dados], {type: mime || "application/octet-stream"});
     const a = document.createElement("a");

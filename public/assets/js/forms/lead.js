@@ -15,7 +15,7 @@ function formLead(l){
       <div class="field"><label for="lEmpresa">Empresa</label><input id="lEmpresa" type="text" value="${esc(l.empresa||"")}" placeholder="Souza Contabilidade ME"></div>
     </div>
     <div class="frow">
-      <div class="field"><label for="lTel">Telefone</label><input id="lTel" type="tel" value="${esc(l.telefone||"")}" placeholder="(11) 90000-0000"></div>
+      <div class="field"><label for="lTel">Telefone</label><input id="lTel" type="tel" data-mascara="telefone" value="${esc(l.telefone||"")}" placeholder="(11) 90000-0000"></div>
       <div class="field"><label for="lEmail">E-mail</label><input id="lEmail" type="email" value="${esc(l.email||"")}"></div>
     </div>
     <div class="frow">
@@ -155,7 +155,7 @@ function abrirConversao(l){
     <div class="frow">
       <div class="field"><label for="kNome">Cliente</label><input id="kNome" type="text" value="${esc(l.empresa||l.nome)}"></div>
       <div class="field"><label for="kTipo">Tipo</label><select id="kTipo"><option value="PJ" ${l.empresa?"selected":""}>PJ</option><option value="PF" ${!l.empresa?"selected":""}>PF</option></select></div>
-      <div class="field"><label for="kDoc">CNPJ / CPF</label><input id="kDoc" type="text" placeholder="00.000.000/0001-00"></div>
+      <div class="field"><label for="kDoc">CNPJ / CPF</label><input id="kDoc" type="text" data-mascara="doc" autocapitalize="characters" autocomplete="off" placeholder="00.000.000/0001-00"></div>
     </div>
     ${camposContrato({ pilar:l.pilar, valorBase:l.valorEstimado, vidas:l.vidas, corretor:l.responsavel,
         regraId:sugerida?sugerida.id:"", inicio }, true)}

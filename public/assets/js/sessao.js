@@ -91,52 +91,123 @@ async function iniciarSessao(session){
 }
 
 const TABELAS = ["perfis","leads","clientes","contratos","vidas","tarefas","despesas","atividade"];
-async function carregarTudo(){
-  try{
-    const [perfis, leads, clientes, contratos, tarefas, despesas, vidas, atividade, config] = await Promise.all([
-      S.db.from("perfis").select("*"),
-      S.db.from("leads").select("*"),
-      S.db.from("clientes").select("*"),
-      S.db.from("contratos").select("*"),
-      S.db.from("tarefas").select("*"),
-      S.db.from("despesas").select("*"),
-      S.db.from("vidas").select("*"),
-      S.db.from("atividade").select("*").order("quando",{ascending:false}).limit(300),
-      S.db.from("config").select("*").eq("id","app").maybeSingle()
-    ]);
-    if(config.data && config.data.dados) S.config = Object.assign(clonar(DEFAULT_CONFIG), clonar(config.data.dados));
-    const linhas = r => (r.data||[]).map(x=>Object.assign({id:x.id}, clonar(x.dados||{})));
-    S.leads = linhas(leads); S.clientes = linhas(clientes); S.contratos = linhas(contratos);
-    S.tarefas = linhas(tarefas); S.despesas = linhas(despesas); S.atividade = linhas(atividade);
-    S.usuarios = (perfis.data||[]).map(dePerfil).concat(S.config.membrosManuais||[]);
-    S.vidas = linhas(vidas);
-    S.usuariosCarregados = true;
-    ["leads","clientes","contratos","vidas","tarefas","despesas"].forEach(registrarSombras);
-    invalidarIndices();
-
-    const meu = S.usuarios.find(u=>u.id===S.uid);
-    if(meu){ S.mePapel = meu.papel||"corretor"; S.meNome = meu.nome||S.meNome; }
-    S.souDono = !!(meu && meu.papel==="gestor");
-    if(perfis.error) banner("Não foi possível ler a equipe: "+perfis.error.message);
-  }catch(e){
-    console.error("[trivium] falha ao carregar:", e);
-    banner("Não foi possível carregar os dados. Verifique a conexão e recarregue.");
+/** Coleções de registros (tabela com id/dono/dados) e o nome delas no estado S. */
+const COLECOES = ["leads","clientes","contratos","vidas","tarefas","despesas"];
+/** O PostgREST do Supabase devolve no máximo 1.000 linhas por pedido (max_rows).
+    Antes, a carteira acima disso sumia em silêncio. Aqui a leitura vem em páginas
+    ordenadas pela chave primária até acabar. */
+const TAM_PAGINA = 1000;
+async function lerTabela(tabela){
+  const linhas = [];
+  for(let de = 0; ; de += TAM_PAGINA){
+    const { data, error } = await S.db.from(tabela).select("*").order("id",{ascending:true}).range(de, de+TAM_PAGINA-1);
+    if(error) throw Object.assign(new Error(error.message), { tabela, causa:error });
+    linhas.push(...(data||[]));
+    if(!data || data.length < TAM_PAGINA) return linhas;
   }
+}
+const deLinha = x => Object.assign({ id:x.id }, clonar(x.dados||{}));
+async function carregarTudo(){
+  const falhas = [];
+  const ler = (t, fn) => fn().catch(e=>{ falhas.push(t); registrarErro(e, { operacao:"carregar "+t }); return null; });
+  const [perfis, leads, clientes, contratos, tarefas, despesas, vidas, atividade, config] = await Promise.all([
+    ler("perfis",   ()=>lerTabela("perfis")),
+    ler("leads",    ()=>lerTabela("leads")),
+    ler("clientes", ()=>lerTabela("clientes")),
+    ler("contratos",()=>lerTabela("contratos")),
+    ler("tarefas",  ()=>lerTabela("tarefas")),
+    // despesas são só do gestor: para os demais a RLS devolve zero linhas, sem erro
+    ler("despesas", ()=>lerTabela("despesas")),
+    ler("vidas",    ()=>lerTabela("vidas")),
+    ler("atividade",async ()=>{ const r = await S.db.from("atividade").select("*").order("quando",{ascending:false}).limit(300);
+                                if(r.error) throw new Error(r.error.message); return r.data||[]; }),
+    ler("config",   async ()=>{ const r = await S.db.from("config").select("*").eq("id","app").maybeSingle();
+                                if(r.error) throw new Error(r.error.message); return r.data; })
+  ]);
+  // Tabela que falhou mantém o que já estava na tela: nunca troca dado bom por lista vazia.
+  if(config && config.dados) S.config = Object.assign(clonar(DEFAULT_CONFIG), clonar(config.dados));
+  if(leads) S.leads = leads.map(deLinha);
+  if(clientes) S.clientes = clientes.map(deLinha);
+  if(contratos) S.contratos = contratos.map(deLinha);
+  if(tarefas) S.tarefas = tarefas.map(deLinha);
+  if(despesas) S.despesas = despesas.map(deLinha);
+  if(vidas) S.vidas = vidas.map(deLinha);
+  if(atividade) S.atividade = atividade.map(deLinha);
+  if(perfis){
+    S.usuarios = perfis.map(dePerfil).concat(S.config.membrosManuais||[]);
+    S.usuariosCarregados = true;
+  }
+  COLECOES.forEach(registrarSombras);
+  invalidarIndices();
+  atualizarMeuPapel();
+  if(falhas.length) banner(`Parte dos dados não carregou (${falhas.join(", ")}). Verifique a conexão — o sistema tenta de novo sozinho.`);
+  else limparBanner();
+  S.carregadoEm = Date.now();
   atualizarRodape();
   render();
 }
+function atualizarMeuPapel(){
+  const meu = S.usuarios.find(u=>u.id===S.uid);
+  if(meu){ S.mePapel = meu.papel||"corretor"; S.meNome = meu.nome||S.meNome; }
+  S.souDono = !!(meu && meu.papel==="gestor");
+}
+
+/* ---------- tempo real ----------
+   Antes: qualquer alteração de qualquer pessoa relia TODAS as tabelas de TODOS
+   os usuários conectados. Com 10 pessoas trabalhando, cada clique virava dezenas
+   de leituras completas. Agora a mudança que chega é aplicada direto no estado;
+   só perfis e configuração (raros) provocam releitura. */
 let canalTempoReal = null;
+function aplicarMudanca(tabela, p){
+  const tipo = p.eventType;
+  if(COLECOES.includes(tabela)){
+    if(tipo==="DELETE"){
+      const id = p.old && p.old.id; if(!id) return false;
+      const antes = S[tabela].length;
+      S[tabela] = S[tabela].filter(x=>x.id!==id);
+      SOMBRA.delete(tabela+":"+id);
+      return S[tabela].length !== antes;
+    }
+    const linha = p.new; if(!linha || !linha.id) return false;
+    const obj = deLinha(linha);
+    const i = S[tabela].findIndex(x=>x.id===obj.id);
+    if(i<0) S[tabela].push(obj); else S[tabela][i] = obj;
+    guardarSombra(tabela, obj);
+    return true;
+  }
+  if(tabela==="atividade" && tipo==="INSERT" && p.new && p.new.id){
+    if(!S.atividade.some(x=>x.id===p.new.id)) S.atividade.unshift(deLinha(p.new));
+    return true;
+  }
+  return null;   // não sabe aplicar: relê
+}
 function ligarTempoReal(){
   if(canalTempoReal) return;
-  canalTempoReal = S.db.channel("trivium");
+  canalTempoReal = S.db.channel("erbe-central");
   TABELAS.concat(["config"]).forEach(t=>{
-    canalTempoReal.on("postgres_changes", { event:"*", schema:"public", table:t }, ()=>{
-      clearTimeout(S._recarga);
-      S._recarga = setTimeout(carregarTudo, 400);
+    canalTempoReal.on("postgres_changes", { event:"*", schema:"public", table:t }, p=>{
+      let r = null;
+      try{ r = aplicarMudanca(t, p); }catch(e){ registrarErro(e, { operacao:"tempo real "+t }); }
+      if(r===null){ clearTimeout(S._recarga); S._recarga = setTimeout(carregarTudo, 400); return; }
+      if(r){ invalidarIndices(); agendarRender(); }
     });
   });
-  canalTempoReal.subscribe();
+  // Ao reconectar depois de uma queda, eventos podem ter se perdido: relê uma vez.
+  let jaConectou = false;
+  canalTempoReal.subscribe(status=>{
+    if(status==="SUBSCRIBED"){ if(jaConectou) carregarTudo(); jaConectou = true; }
+  });
 }
+/** Vários eventos em sequência viram um desenho só. */
+function agendarRender(){
+  clearTimeout(S._render);
+  S._render = setTimeout(()=>render(), 120);
+}
+/* Aba que ficou muito tempo escondida (celular no bolso, notebook fechado) pode
+   ter perdido eventos: ao voltar, relê. */
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState==="visible" && S.db && S.uid && S.carregadoEm && Date.now()-S.carregadoEm > 10*60*1000) carregarTudo();
+});
 
 /* ---------- ações da tela de entrada ---------- */
 async function entrar(){
@@ -306,13 +377,24 @@ function render(){
   atualizarBadges();
   $("#pageActions").innerHTML = acoesTopo();
   const v = $("#view");
-  v.innerHTML = ({
-    dashboard:viewDashboard, leads:viewLeads, clientes:viewClientes, contratos:viewContratos,
-    comissoes:viewComissoes, renovacoes:viewRenovacoes, tarefas:viewTarefas, equipe:viewEquipe, despesas:viewDespesas, vidas:viewVidas,
-    relatorios:viewRelatorios, operadoras:viewOperadoras, atividade:viewAtividade, config:viewConfig
-  }[S.view] || viewDashboard)();
-  if(S.view==="leads") ligarKanban();
-  if(S.view==="clientes" && S.modoClientes==="kanban") ligarBoardClientes();
+  // Uma tela que quebra não derruba o sistema: mostra o aviso e registra o erro.
+  try{
+    v.innerHTML = ({
+      dashboard:viewDashboard, leads:viewLeads, clientes:viewClientes, contratos:viewContratos,
+      comissoes:viewComissoes, renovacoes:viewRenovacoes, tarefas:viewTarefas, equipe:viewEquipe, despesas:viewDespesas, vidas:viewVidas,
+      relatorios:viewRelatorios, operadoras:viewOperadoras, atividade:viewAtividade, config:viewConfig
+    }[S.view] || viewDashboard)();
+    if(S.view==="leads") ligarKanban();
+    if(S.view==="clientes" && S.modoClientes==="kanban") ligarBoardClientes();
+  }catch(e){
+    registrarErro(e, { operacao:"desenhar "+S.view });
+    v.innerHTML = `<div class="panel" style="max-width:560px;margin:30px auto"><div class="empty" style="padding:34px 26px">
+      <b style="font-size:15px">Esta tela não pôde ser exibida</b>
+      Algum registro tem um dado que a tela não esperava. Seus dados estão salvos — o problema é só de exibição e já foi registrado.
+      <div style="margin-top:16px;display:flex;gap:8px;justify-content:center">
+        <button class="btn" data-act="ir" data-view="dashboard">Voltar ao painel</button>
+        <button class="btn primary" data-act="recarregarPagina">Recarregar</button></div></div></div>`;
+  }
   if(typeof mostrarLembrete==="function") mostrarLembrete();
   if(typeof pintarMarca==="function") pintarMarca();
   document.body.classList.toggle("sem-com", ocultaComissao());

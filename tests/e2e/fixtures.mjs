@@ -43,7 +43,7 @@ export function carteira({ clientesExtras = 0 } = {}) {
   };
   const clientes = [
     cli("cli-alfa", "Alfa Engenharia", IDS.corretorA, { doc: "11.222.333/0001-81" }),
-    cli("cli-beta", "Beta Comércio", IDS.corretorB, { doc: "22.333.444/0001-90" }),
+    cli("cli-beta", "Beta Comércio", IDS.corretorB, { doc: "22.333.444/0001-81" }),
     cli("cli-gama", "Gama Serviços", IDS.gestor)
   ];
   for (let i = 0; i < clientesExtras; i++) clientes.push(cli(`cli-x${String(i).padStart(5, "0")}`, `Cliente Extra ${String(i).padStart(5, "0")}`, IDS.gestor));

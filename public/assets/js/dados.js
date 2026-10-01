@@ -54,8 +54,9 @@ async function salvar(col, obj, evento){
         .upsert({ id:obj.id, dono:donoDe(col,obj), dados:obj }, { onConflict:"id" });
       if(error) throw error;
     }
-  }catch(e){ falhaEscrita(e); return; }
+  }catch(e){ falhaEscrita(e, col); await desfazerNaTela(col, obj.id); return false; }
   registrarAtividade(col, obj, evento, novo, antes);
+  return true;
 }
 async function remover(col, id, evento){
   const antigo = S[col].find(x=>x.id===id);
@@ -69,11 +70,29 @@ async function remover(col, id, evento){
       if(antigo && antigo.manual) await removerMembroManual(id);
       else { const { error } = await S.db.from("perfis").delete().eq("id", id); if(error) throw error; }
     } else {
-      const { error } = await S.db.from(COLS[col]).delete().eq("id", id);
+      // .select() devolve o que de fato foi apagado: quando a RLS filtra a linha, o
+      // banco responde "sucesso" com zero linhas — antes a tela sumia com o registro
+      // que continuava no servidor.
+      const { data, error } = await S.db.from(COLS[col]).delete().eq("id", id).select("id");
       if(error) throw error;
+      if(Array.isArray(data) && !data.length && antigo) throw { code:"42501", message:"Seu acesso não permite excluir este registro." };
     }
-  }catch(e){ falhaEscrita(e); return; }
+  }catch(e){ falhaEscrita(e, col); await desfazerNaTela(col, id); return false; }
   if(antigo) registrarAtividade(col, antigo, evento||"Excluiu", false);
+  return true;
+}
+/** O servidor recusou: a tela volta a mostrar o que está gravado de verdade. */
+async function desfazerNaTela(col, id){
+  try{
+    if(col==="usuarios" || !COLS[col]){ await carregarTudo(); return; }
+    const { data, error } = await S.db.from(COLS[col]).select("*").eq("id", id).maybeSingle();
+    if(error) throw error;
+    S[col] = S[col].filter(x=>x.id!==id);
+    SOMBRA.delete(col+":"+id);
+    if(data){ const obj = deLinha(data); S[col].push(obj); guardarSombra(col, obj); }
+    invalidarIndices();
+    render();
+  }catch(e){ registrarErro(e, { operacao:"desfazer "+col }); carregarTudo(); }
 }
 /** Membros que ainda não têm login ficam guardados dentro da configuração. */
 async function salvarMembroManual(u){
@@ -92,18 +111,25 @@ async function salvarConfig(){
     const { error } = await S.db.from("config")
       .upsert({ id:"app", dados:S.config }, { onConflict:"id" });
     if(error) throw error;
-  }catch(e){ falhaEscrita(e); }
+  }catch(e){ falhaEscrita(e, "config"); carregarTudo(); }
 }
-function falhaEscrita(e){
+/** Mensagens que o próprio banco escreve para o usuário (gatilhos da migration 0002). */
+const RE_MSG_DO_BANCO = /^(Somente o gestor|O recebimento deve|Parcela recebida não confere|Seu acesso não permite)/;
+function falhaEscrita(e, col){
   const msg = (e && (e.message||e.hint||"")) + "";
-  if(/row-level security|permission denied|violates/i.test(msg)){
-    banner("Seu acesso não permite essa alteração. Fale com o gestor da corretora.");
+  const codigo = e && e.code;
+  if(RE_MSG_DO_BANCO.test(msg)){
+    banner(msg + " A alteração não foi salva.");
+  } else if(codigo==="42501" || /row-level security|permission denied|violates/i.test(msg)){
+    banner("Seu acesso não permite essa alteração — ela não foi salva. Fale com o gestor da corretora.");
   } else if(/JWT|expired|session/i.test(msg)){
-    banner("Sua sessão expirou. Recarregue a página e entre de novo.");
+    banner("Sua sessão expirou. Recarregue a página e entre de novo — a última alteração não foi salva.");
+  } else if(!navigator.onLine || /Failed to fetch|NetworkError|network/i.test(msg)){
+    banner("Sem conexão: a última alteração não foi salva. Tente de novo quando a internet voltar.");
   } else {
-    banner("Não foi possível salvar agora. Verifique a conexão e tente de novo.");
+    banner("Não foi possível salvar agora — a alteração foi desfeita na tela. Tente de novo em instantes.");
+    registrarErro(e, { operacao:"salvar "+(col||"") });
   }
-  console.error("[trivium] falha ao salvar:", e);
 }
 
 /* ---------- registro de atividade: quem mexeu em quê ---------- */
@@ -212,5 +238,4 @@ async function registrarAtividade(col, obj, evento, novo, antes){
 }
 /* O PostgreSQL não tem teto de linhas: o histórico fica inteiro, para sempre.
    O que a tela carrega é limitado (as mais recentes), o que está guardado não. */
-function banner(txt){ const b=$("#banner"); b.hidden=false; b.innerHTML='<span aria-hidden="true">⚠</span> '+esc(txt); }
 

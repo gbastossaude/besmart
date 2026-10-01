@@ -20,7 +20,7 @@
 --   4. A tabela atividade passa a ser só de inclusão (ninguém apaga).
 --   5. Políticas reescritas com (select ...) — o Postgres avalia a função uma
 --      vez por consulta, não uma vez por linha. Muda muito com carteira grande.
---   6. Funções de apoio: transferir_carteira() e cliente_por_documento().
+--   6. Função de apoio: transferir_carteira().
 -- ============================================================
 
 -- ------------------------------------------------------------
@@ -398,34 +398,6 @@ begin
 end $$;
 revoke all on function public.transferir_carteira(uuid, uuid) from public, anon;
 grant execute on function public.transferir_carteira(uuid, uuid) to authenticated;
-
--- ------------------------------------------------------------
--- 8. Cliente único na corretora inteira
---    A RLS impede o corretor de ver o cliente do colega — e por isso a trava de
---    CPF/CNPJ duplicado feita na tela não enxergava duplicidade entre carteiras.
---    Esta função responde só o necessário: se o documento existe, de quem é e
---    (se quem pergunta pode ver) o id do cadastro.
--- ------------------------------------------------------------
-create index if not exists clientes_doc_digitos_idx
-  on public.clientes ((regexp_replace(coalesce(dados->>'doc',''), '\D', '', 'g')));
-
-create or replace function public.cliente_por_documento(doc text, exceto text default null)
-returns table (id text, nome text, responsavel text, visivel boolean)
-language sql stable security definer set search_path = public as $$
-  select case when v then c.id end,
-         case when v then c.dados->>'nome' end,
-         coalesce((select p.nome from public.perfis p where p.id = c.dono), 'outro membro da equipe'),
-         v
-    from public.clientes c
-    cross join lateral (select (public.vejo_tudo() or c.dono = auth.uid()) as v) vis
-   where public.sou_ativo()
-     and length(regexp_replace(coalesce(doc,''), '\D', '', 'g')) >= 11
-     and regexp_replace(coalesce(c.dados->>'doc',''), '\D', '', 'g') = regexp_replace(doc, '\D', '', 'g')
-     and (exceto is null or c.id <> exceto)
-   limit 1
-$$;
-revoke all on function public.cliente_por_documento(text, text) from public, anon;
-grant execute on function public.cliente_por_documento(text, text) to authenticated;
 
 -- As funções internas não precisam ser chamadas pela API.
 revoke all on function public._parcela_chave(jsonb, boolean) from public, anon, authenticated;

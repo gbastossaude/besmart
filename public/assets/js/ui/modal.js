@@ -72,3 +72,27 @@ function paraNumero(v){
 }
 const numv = id => { const e=document.getElementById(id); return e?paraNumero(e.value):0; };
 
+
+/* ---------- erro no próprio campo ----------
+   A mensagem aparece colada ao campo (e é lida por leitor de tela), em vez de um
+   aviso solto que some em dois segundos. */
+function erroCampo(id, msg){
+  const campo = document.getElementById(id);
+  if(!campo){ toast(msg); return; }
+  campo.setAttribute("aria-invalid", "true");
+  const idMsg = id + "-erro";
+  let el = document.getElementById(idMsg);
+  if(!el){
+    el = document.createElement("span");
+    el.id = idMsg; el.className = "erro-campo"; el.setAttribute("role", "alert");
+    (campo.closest(".field") || campo.parentElement).appendChild(el);
+  }
+  el.textContent = msg;
+  campo.setAttribute("aria-describedby", idMsg);
+  campo.focus();
+  campo.addEventListener("input", function limpa(){ campo.removeAttribute("aria-invalid"); el.remove(); campo.removeEventListener("input", limpa); });
+}
+function limparErrosCampo(){
+  document.querySelectorAll(".erro-campo").forEach(x=>x.remove());
+  document.querySelectorAll('[aria-invalid="true"]').forEach(x=>x.removeAttribute("aria-invalid"));
+}

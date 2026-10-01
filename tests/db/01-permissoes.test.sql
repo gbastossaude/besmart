@@ -177,3 +177,18 @@ select _barrado($$insert into clientes (id, dono, dados) values ('cli-z', '00000
 select _barrado($$insert into contratos (id, dono, dados) values ('ctr-z', '00000000-0000-4000-8000-00000000000a', '{"id":"ctr-z","status":"inventado"}')$$, 'situação de contrato fora da lista é recusada');
 delete from contratos where id = 'ctr-a';
 select _ok((select count(*) from vidas where dados->>'contratoId' = 'ctr-a') = 0, 'apagar contrato apaga as vidas dele');
+
+-- ================= 0003: erros do app e CNPJ alfanumérico =================
+insert into clientes (id, dono, dados) values ('cli-alfa', '00000000-0000-4000-8000-00000000000a', '{"id":"cli-alfa","nome":"Alfanum","doc":"12.ABC.345/01DE-35"}');
+select _como('00000000-0000-4000-8000-00000000000a');
+select _ok((select nome = 'Alfanum' from public.cliente_por_documento('12abc34501de35')), 'CNPJ alfanumérico encontrado com ou sem máscara');
+select _ok(not exists (select 1 from public.cliente_por_documento('12.000.345/0100-35')), 'letras não são descartadas na comparação');
+insert into erros_app (pagina, operacao, mensagem) values ('clientes', 'desenhar clientes', 'TypeError: x');
+select _ok((select count(*) from erros_app) = 0, 'corretor registra erro mas não lê a tabela');
+select _barrado($$insert into erros_app (quem, mensagem) values ('00000000-0000-4000-8000-00000000000b', 'falso')$$, 'erro não pode ser registrado em nome de outro');
+select _barrado($$insert into erros_app (mensagem) values (repeat('x', 5000))$$, 'mensagem gigante é recusada');
+reset role;
+select _como('00000000-0000-4000-8000-000000000001');
+select _ok((select count(*) from erros_app) = 1, 'gestor lê os erros registrados');
+select _barrado($$delete from erros_app$$, 'erros não são apagados pela API');
+reset role;

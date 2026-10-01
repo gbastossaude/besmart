@@ -13,7 +13,7 @@ function formCliente(c){
       <div class="field"><label for="xTipo">Tipo</label><select id="xTipo" data-act="tipoCliente"><option ${c.tipo==="PJ"?"selected":""}>PJ</option><option ${c.tipo==="PF"?"selected":""}>PF</option></select></div>
     </div>
     <div class="frow">
-      <div class="field"><label for="xDoc">CNPJ / CPF</label><input id="xDoc" type="text" value="${esc(c.doc||"")}" inputmode="numeric" data-act="conferirDoc" data-id="${esc(c.id||"")}">
+      <div class="field"><label for="xDoc">CNPJ / CPF</label><input id="xDoc" type="text" value="${esc(c.doc||"")}" autocapitalize="characters" autocomplete="off" data-mascara="doc" data-act="conferirDoc" data-id="${esc(c.id||"")}">
         <span class="hint" id="avisoDoc"></span></div>
       <div class="field"><label for="xNasc" id="lblNasc">${c.tipo==="PF"?"Data de nascimento":"Data de fundação"}</label><input id="xNasc" type="date" value="${esc(c.nascimento||"")}">
         <span class="hint" id="dicaNasc">${c.tipo==="PF"?"Entra no lembrete de aniversário.":"Aniversário da empresa — também entra no lembrete."}</span></div>
@@ -25,11 +25,11 @@ function formCliente(c){
       <div class="field"><label for="xContatoCargo">Cargo</label><input id="xContatoCargo" type="text" value="${esc(c.contatoCargo||"")}" placeholder="Sócio, RH, financeiro…"></div>
       <div class="field"><label for="xContatoNasc">Nascimento do contato</label><input id="xContatoNasc" type="date" value="${esc(c.contatoNascimento||"")}">
         <span class="hint">Também entra no lembrete de aniversário.</span></div>
-      <div class="field"><label for="xContatoZap">WhatsApp do contato</label><input id="xContatoZap" type="tel" value="${esc(c.contatoWhatsapp||"")}" placeholder="com DDD"></div>
+      <div class="field"><label for="xContatoZap">WhatsApp do contato</label><input id="xContatoZap" type="tel" data-mascara="telefone" value="${esc(c.contatoWhatsapp||"")}" placeholder="com DDD"></div>
     </div>
     <div class="frow">
-      <div class="field"><label for="xTel">Telefone</label><input id="xTel" type="tel" value="${esc(c.telefone||"")}"></div>
-      <div class="field"><label for="xZap">WhatsApp</label><input id="xZap" type="tel" value="${esc(c.whatsapp||"")}" placeholder="com DDD"></div>
+      <div class="field"><label for="xTel">Telefone</label><input id="xTel" type="tel" data-mascara="telefone" value="${esc(c.telefone||"")}"></div>
+      <div class="field"><label for="xZap">WhatsApp</label><input id="xZap" type="tel" data-mascara="telefone" value="${esc(c.whatsapp||"")}" placeholder="com DDD"></div>
       <div class="field"><label for="xEmail">E-mail</label><input id="xEmail" type="email" value="${esc(c.email||"")}"></div>
     </div>
     <div class="frow">
@@ -52,10 +52,20 @@ function formCliente(c){
   </div>`;
 }
 async function salvarCliente(id){
-  const nome = val("xNome"); if(!nome){ toast("Informe o nome do cliente."); return; }
+  limparErrosCampo();
+  const nome = val("xNome"); if(!nome){ erroCampo("xNome", "Informe o nome do cliente."); return; }
   const doc = val("xDoc");
-  // a regra do cliente único: o mesmo CPF ou CNPJ não entra duas vezes
-  const repetido = clientePorDoc(doc, id||null);
+  if(tipoDocValido(doc)===null){ erroCampo("xDoc", "CPF ou CNPJ inválido — confira os números (CNPJ pode ter letras)."); return; }
+  if(!emailValido(val("xEmail"))){ erroCampo("xEmail", "E-mail com formato inválido."); return; }
+  for(const f of ["xTel","xZap","xContatoZap"]) if(!telefoneValido(val(f))){ erroCampo(f, "Telefone precisa de DDD + número (10 ou 11 dígitos)."); return; }
+  // a regra do cliente único: o mesmo CPF ou CNPJ não entra duas vezes — nem em carteiras diferentes
+  const repetido = await documentoEmUso(doc, id||null);
+  if(repetido && !repetido.visivel){
+    await confirmar("Esse documento já está cadastrado",
+      `O documento ${mascararDoc(doc)} já é cliente na carteira de ${repetido.responsavel}. Para não duplicar o cadastro, peça ao gestor para incluir o novo produto no cliente existente ou transferir a carteira.`,
+      "Entendi");
+    return;
+  }
   if(repetido){
     const ok = await confirmar("Esse documento já está na carteira",
       `${repetido.nome} já usa o documento ${mascararDoc(doc)}. Dois cadastros do mesmo cliente quebram a visão consolidada da carteira — o certo é acrescentar o novo produto como contrato dentro do cadastro que já existe.`,
@@ -74,17 +84,43 @@ async function salvarCliente(id){
     contatoNome:val("xContato"), contatoCargo:val("xContatoCargo"),
     contatoNascimento:val("xContatoNasc"), contatoWhatsapp:val("xContatoZap")
   });
-  await salvar("clientes", c);
+  if(!await salvar("clientes", c)) return;
   fecharModal(); toast(id?"Cliente atualizado":"Cliente cadastrado");
 }
 /** Aviso em tempo real enquanto a pessoa digita o documento. */
+let tConferirDoc = null;
 function conferirDoc(idAtual){
   const campo = document.getElementById("xDoc");
   const aviso = document.getElementById("avisoDoc");
   if(!campo || !aviso) return;
-  const achado = clientePorDoc(campo.value, idAtual||null);
-  aviso.textContent = achado ? `Já existe: ${achado.nome}` : "";
-  aviso.style.color = achado ? "var(--crit)" : "";
+  const doc = campo.value;
+  const local = clientePorDoc(doc, idAtual||null);
+  const mostrar = (txt, ruim) => { aviso.textContent = txt; aviso.style.color = ruim ? "var(--crit)" : ""; };
+  if(local){ mostrar(`Já existe: ${local.nome}`, true); return; }
+  const n = normDoc(doc).length;
+  if((n===11 || n===14) && tipoDocValido(doc)===null){ mostrar("Documento inválido — confira os números.", true); return; }
+  mostrar("", false);
+  // não achou na carteira visível: pergunta ao banco (pode estar na carteira de um colega)
+  clearTimeout(tConferirDoc);
+  if(n===11 || n===14) tConferirDoc = setTimeout(async ()=>{
+    const r = await documentoEmUso(doc, idAtual||null);
+    if(r && document.getElementById("xDoc") && normDoc(document.getElementById("xDoc").value)===normDoc(doc))
+      mostrar(r.visivel ? `Já existe: ${r.nome}` : `Já é cliente na carteira de ${r.responsavel}`, true);
+  }, 350);
+}
+/** O documento já é de algum cliente? Procura na carteira carregada e, se não achar,
+    no banco inteiro (a RLS esconde o cliente do colega; a função cliente_por_documento
+    responde só se existe e de quem é). */
+async function documentoEmUso(doc, exceto){
+  if(!normDoc(doc)) return null;
+  const local = clientePorDoc(doc, exceto);
+  if(local) return { id:local.id, nome:local.nome, visivel:true, responsavel:nomeUsuario(local.responsavel) };
+  if(!S.db) return null;
+  try{
+    const { data, error } = await S.db.rpc("cliente_por_documento", { doc, exceto });
+    if(error || !data || !data.length) return null;     // função ausente (migration não aplicada): segue só com a checagem local
+    return data[0];
+  }catch(e){ return null; }
 }
 /** Anos completos entre uma data e hoje. */
 function idadeEm(data, ref){

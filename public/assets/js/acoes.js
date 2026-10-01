@@ -14,9 +14,18 @@ document.addEventListener("click", async e=>{
   }
   if(!el) return;
   const a = el.dataset.act, id = el.dataset.id;
-
+  // Ações que gravam ficam travadas até terminar: clique duplo não cria registro duplicado.
+  const grava = /^(salvar|confirmar|gerar|conciliar|importar|liberar|recusar)/.test(a);
+  if(grava){ if(el.dataset.ocupado) return; el.dataset.ocupado = "1"; el.setAttribute("aria-busy","true"); }
+  try{ await executarAcao(a, id, el, e); }
+  catch(err){ registrarErro(err, { operacao:"ação "+a }); toast("Não foi possível concluir. Tente de novo."); }
+  finally{ if(grava){ delete el.dataset.ocupado; el.removeAttribute("aria-busy"); } }
+});
+async function executarAcao(a, id, el, e){
   switch(a){
+    case "recarregarPagina": location.reload(); break;
     case "fechar": fecharModal(); break;
+    case "fecharBanner": limparBanner(); break;
     case "escopo": S.escopo = el.dataset.v; zerarPaginas(); render(); break;
     case "limparFiltros": S.filtros = {}; S.pagClientes=1; S.pagVidas=1; S.pagComissoes=1; S.pagContratos=1; render(); break;
     case "basePct":
@@ -627,7 +636,7 @@ document.addEventListener("click", async e=>{
       toast("Dados de exemplo apagados"); break;
     }
   }
-});
+}
 function aplicarCaminho(path, fn){
   const [a,b] = path.split(".");
   if(b) S.config[a][b] = fn(S.config[a][b]||[]);

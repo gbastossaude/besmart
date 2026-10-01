@@ -137,10 +137,11 @@
       }
       if (this.modo === "delete") {
         const alvo = tab.filter(r => podeLer(t, r)).filter(r => this.f.every(fn => fn(r)));
-        for (const r of alvo) if (!podeEscrever(t, r, "delete")) return { data: null, error: erroRls(t) };
+        const permitidos = alvo.filter(r => podeEscrever(t, r, "delete"));
+        alvo.length = 0; alvo.push(...permitidos);
         db.tables[t] = tab.filter(r => !alvo.includes(r));
         for (const r of alvo) emitir(t, "DELETE", null, { id: r.id });
-        return { data: null, error: null };
+        return { data: this.retorna ? alvo.map(r => ({ id: r.id })) : null, error: null };
       }
       return { data: null, error: { message: "modo desconhecido" } };
     }
@@ -149,7 +150,18 @@
   function avisarAuth(evento) { for (const cb of db.authCbs) setTimeout(() => cb(evento, db.session), 0); }
   const client = {
     from: t => new Q(t),
-    rpc: (nome) => Promise.resolve({ data: null, error: { message: `function ${nome} does not exist` } }),
+    rpc: async (nome, args) => {
+      if (nome === "cliente_por_documento") {
+        if (!ativo()) return { data: [], error: null };
+        const n = v => String(v || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
+        const c = db.tables.clientes.find(r => n((r.dados || {}).doc) === n(args.doc) && r.id !== args.exceto);
+        if (!c) return { data: [], error: null };
+        const v = vejoTudo() || c.dono === uid();
+        const p = db.tables.perfis.find(x => x.id === c.dono);
+        return { data: [{ id: v ? c.id : null, nome: v ? c.dados.nome : null, responsavel: p ? p.nome : "outro membro da equipe", visivel: v }], error: null };
+      }
+      return { data: null, error: { message: `function ${nome} does not exist` } };
+    },
     auth: {
       getSession: async () => ({ data: { session: db.session }, error: null }),
       onAuthStateChange: cb => { db.authCbs.push(cb); return { data: { subscription: { unsubscribe() {} } } }; },

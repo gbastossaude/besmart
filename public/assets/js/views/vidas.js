@@ -413,7 +413,7 @@ function painelPendentes(pendentes){
 
 /** CPF aparece mascarado: a tela não precisa do número inteiro. */
 function mascararDoc(v){
-  const d = soDigitos(v);
+  const d = normDoc(v);
   if(d.length===11) return `•••.${d.slice(3,6)}.${d.slice(6,9)}-••`;
   if(d.length===14) return `••.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-••`;
   return d ? "•••" : "";
@@ -450,7 +450,7 @@ function formVida(v, contratoId){
     <details>
       <summary style="cursor:pointer;font-size:11.5px;color:var(--ink-3);font-weight:600">Dados pessoais (opcionais)</summary>
       <div class="frow" style="margin-top:10px">
-        <div class="field"><label for="viDoc">CPF</label><input id="viDoc" type="text" value="${esc(v.doc||"")}" placeholder="só números" inputmode="numeric">
+        <div class="field"><label for="viDoc">CPF</label><input id="viDoc" type="text" value="${esc(formatarDoc(v.doc||""))}" placeholder="000.000.000-00" inputmode="numeric" data-mascara="doc">
           <span class="hint">Guardado para movimentação junto à operadora. Aparece mascarado nas listas.</span></div>
         <div class="field"><label for="viNasc">Nascimento</label><input id="viNasc" type="date" value="${esc(v.nascimento||"")}"></div>
         <div class="field"><label for="viCarteirinha">Carteirinha</label><input id="viCarteirinha" type="text" value="${esc(v.carteirinha||"")}"></div>
